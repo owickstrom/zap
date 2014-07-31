@@ -58,7 +58,9 @@ Lexer.prototype._pendingText = function () {
 };
 
 Lexer.prototype.clear = function () {
-  // TODO!
+  // Move start position of the pending token text to
+  // the next character.
+  this.start = this.end;
 };
 
 Lexer.prototype._emitWithText = function (tokenType, text) {

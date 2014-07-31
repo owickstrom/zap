@@ -56,4 +56,16 @@ describe('lex.Lexer', function () {
     expect(token.text).to.equal('ab');
   });
 
+  it('emits multiple tokens', function () {
+    var lexer = new Lexer('ab');
+
+    lexer.read();
+    lexer.emitIfNotBlank(Token.SYMBOL);
+    lexer.read();
+    lexer.emitIfNotBlank(Token.SYMBOL);
+
+    expect(lexer.next().text).to.equal('a');
+    expect(lexer.next().text).to.equal('b');
+  });
+
 });
