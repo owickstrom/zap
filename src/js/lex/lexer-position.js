@@ -4,11 +4,11 @@ function LexerPosition(line, column) {
 }
 
 LexerPosition.prototype.addLine = function (position) {
-  return new LexerPosition(position.line + 1, position.column);
+  return new LexerPosition(this.line + 1, 1);
 };
 
 LexerPosition.prototype.addColumn = function (position) {
-  return new LexerPosition(position.line, position.column + 1);
+  return new LexerPosition(this.line, this.column + 1);
 };
 
 module.exports = LexerPosition;

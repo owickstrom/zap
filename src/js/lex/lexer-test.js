@@ -68,4 +68,35 @@ describe('lex.Lexer', function () {
     expect(lexer.next().text).to.equal('b');
   });
 
+  it('emits tokens with position', function () {
+    var lexer = new Lexer('ab\nc');
+
+    lexer.read();
+    lexer.emit(Token.SYMBOL);
+    lexer.read();
+    lexer.emit(Token.SYMBOL);
+    lexer.read();
+    lexer.emit(Token.SYMBOL);
+    lexer.read();
+    lexer.emit(Token.SYMBOL);
+
+    var a = lexer.next();
+    expect(a.position.line).to.equal(1);
+    expect(a.position.column).to.equal(1);
+
+    var b = lexer.next();
+    expect(b.position.line).to.equal(1);
+    expect(b.position.column).to.equal(2);
+
+    var w = lexer.next();
+    expect(w.position.line).to.equal(1);
+    expect(w.position.column).to.equal(3);
+
+    var c = lexer.next();
+    expect(c.position.line).to.equal(2);
+    expect(c.position.column).to.equal(1);
+  });
+
+  it('emits whitespace tokens');
+
 });

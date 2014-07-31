@@ -7,6 +7,7 @@ function Lexer(input) {
   this.start = 0;
   this.end = 0;
   this.positions = [];
+  this.lastWasNewLine = false;
   this.emitted = [];
   this.nextLexerFn = lexWhitespace;
 }
@@ -18,7 +19,7 @@ Lexer.prototype._startPosition = function () {
   }
 
   // If we've never read, were at column 0.
-  return new LexerPosition(1, 1);
+  return new LexerPosition(1, 0);
 };
 
 Lexer.prototype._currentPosition = function () {
@@ -37,11 +38,23 @@ Lexer.prototype.read = function () {
   }
 
   var c = this.input[this.end];
+
+  // Add a position based on the last read character.
+  var current = this._currentPosition();
+  var next = this.lastWasNewLine ? current.addLine() : current.addColumn();
+  this.positions.push(next);
+
+  // Remember if this was a new line.
+  this.lastWasNewLine = c == '\n';
+
+  // Move end index to next character.
   this.end += 1;
+
   return c;
 };
 
 Lexer.prototype.backup = function () {
+  this.positions.pop();
   this.end -= 1;
 };
 
@@ -58,13 +71,16 @@ Lexer.prototype._pendingText = function () {
 };
 
 Lexer.prototype.clear = function () {
+  // Remove all positions expect the last one, that's where
+  // the next token will start.
+  this.positions = [this._currentPosition()];
+
   // Move start position of the pending token text to
   // the next character.
   this.start = this.end;
 };
 
 Lexer.prototype._emitWithText = function (tokenType, text) {
-  // TODO: Is this right?!
   var position = this._currentPosition();
   var token = new Token(tokenType, text, position.line, position.column);
 
