@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "description": "A LISP runtime in Javascript",
   "main": "dist/zap-node.js",
-  "directories": {
-  },
-  "scripts": {
-  },
+  "directories": {},
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git://github.com/owickstrom/zap.git"
@@ -19,7 +17,11 @@
   "homepage": "https://github.com/owickstrom/zap",
   "dependencies": {},
   "devDependencies": {
-    "browserify": "~5.9.1",
-    "beefy": "~2.1.0"
+    "browserify": "~4",
+    "beefy": "~2.1.0",
+    "karma": "~0.12.19",
+    "karma-mocha": "~0.1.6",
+    "karma-phantomjs-launcher": "~0.1.4",
+    "karma-browserify": "~0.2.1"
   }
 }
