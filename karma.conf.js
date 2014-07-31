@@ -15,7 +15,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'src/js/**/*-test.js'
+      {pattern: 'src/js/**/!(*-test.js)', watched: true, included: false, served: true},
+      {pattern: 'src/js/**/*-test.js', watched: true, included: true, served: true}
     ],
 
 
@@ -27,7 +28,11 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'src/js/**/*-test.js': ['browserify']
+      'src/js/**/*.js': ['browserify']
+    },
+
+    browserify: {
+      watch: true
     },
 
 
