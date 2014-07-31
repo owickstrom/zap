@@ -2,10 +2,12 @@ var Lexer = require('./lexer.js');
 
 describe('lex.Lexer', function () {
 
-  it('should ...', function () {
-    var lexer = new Lexer();
+  it('should read single characters', function () {
+    var lexer = new Lexer('abc');
 
-    var r = lexer.read();
+    expect(lexer.read()).to.equal('a');
+    expect(lexer.read()).to.equal('b');
+    expect(lexer.read()).to.equal('c');
   });
 
 });
