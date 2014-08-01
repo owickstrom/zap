@@ -8,5 +8,7 @@ function Token(type, text, line, column) {
 
 Token.SYMBOL = "Symbol";
 Token.WHITESPACE = "Whitespace";
+Token.EOF = "EOF";
+Token.ERROR = "Error";
 
 module.exports = Token;
