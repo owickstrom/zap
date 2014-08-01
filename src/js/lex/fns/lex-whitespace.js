@@ -19,12 +19,7 @@ module.exports = function lexWhitespace(lexer) {
       lexer.emitIfNotBlank(Token.WHITESPACE);
 
       // TODO: Add lexer fns for newline and comment.
-
-      if (character.isValidSymbolCharacter(c)) {
-        return lexSymbol;
-      } else {
-        return lexer.unexpectedCharacter(c);
-      }
+      return lexSymbol;
     }
   }
 };

@@ -7,6 +7,16 @@ function Token(type, text, line, column) {
 }
 
 Token.SYMBOL = "Symbol";
+
+Token.LEFT_PARENTHESIS = "LeftParenthesis";
+Token.RIGHT_PARENTHESIS = "RightParenthesis";
+
+Token.LEFT_BRACKET = "LeftBracket";
+Token.RIGHT_BRACKET = "RightBracket";
+
+Token.LEFT_CURLY_BRACKET = "LeftCurlyBracket";
+Token.RIGHT_CURLY_BRACKET = "RightCurlyBracket";
+
 Token.WHITESPACE = "Whitespace";
 Token.EOF = "EOF";
 Token.ERROR = "Error";
