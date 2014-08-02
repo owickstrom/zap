@@ -1,7 +1,7 @@
 var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
-var List = require('../lang/list.js');
 var TokenScanner = require('./token-scanner.js');
+var Immutable = require('immutable');
 
 var readerFns = {};
 
@@ -63,7 +63,7 @@ var readList = makeReadEnclosed(
   Token.LEFT_PARENTHESIS,
   Token.RIGHT_PARENTHESIS,
   function (elements) {
-    return List.of.apply(null, elements);
+    return Immutable.Sequence.apply(null, elements);
   });
 
 readerFns[Token.LEFT_PARENTHESIS] = readList;
