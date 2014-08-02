@@ -1,7 +1,7 @@
 var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
 var TokenScanner = require('./token-scanner.js');
-var Immutable = require('immutable');
+var m = require('mori');
 
 var readerFns = {};
 
@@ -59,14 +59,29 @@ function makeReadEnclosed(before, after, construct) {
   };
 }
 
-var readList = makeReadEnclosed(
+// List
+readerFns[Token.LEFT_PARENTHESIS] = makeReadEnclosed(
   Token.LEFT_PARENTHESIS,
   Token.RIGHT_PARENTHESIS,
   function (elements) {
-    return Immutable.Sequence.apply(null, elements);
+    return m.list.apply(null, elements);
   });
 
-readerFns[Token.LEFT_PARENTHESIS] = readList;
+// Vector
+readerFns[Token.LEFT_BRACKET] = makeReadEnclosed(
+  Token.LEFT_BRACKET,
+  Token.RIGHT_BRACKET,
+  function (elements) {
+    return m.vector.apply(null, elements);
+  });
+
+// Map
+readerFns[Token.LEFT_CURLY_BRACKET] = makeReadEnclosed(
+  Token.LEFT_CURLY_BRACKET,
+  Token.RIGHT_CURLY_BRACKET,
+  function (elements) {
+    return m.map.apply(null, elements);
+  });
 
 // Ignored tokens.
 readerFns[Token.COMMENT_START] = null;
