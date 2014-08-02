@@ -15,6 +15,10 @@ Token.SLASH = "Slash";
 Token.COMMENT_START = "CommentStart";
 Token.COMMENT_CONTENT = "CommentContent";
 
+Token.STRING_START = "StringStart";
+Token.STRING_CONTENT = "StringContent";
+Token.STRING_END = "StringEnd";
+
 Token.LEFT_PARENTHESIS = "LeftParenthesis";
 Token.RIGHT_PARENTHESIS = "RightParenthesis";
 

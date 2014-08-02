@@ -300,5 +300,53 @@ describe('lex', function () {
 
     });
 
+    describe('lexStringStart', function () {
+
+      it('emits string start token', function () {
+        var text = '"';
+        var lexer = new Lexer(text);
+
+        expect(lexer.next().type).to.equal(Token.STRING_START);
+      });
+
+      it('emits string content token', function () {
+        var text = '"abc';
+        var lexer = new Lexer(text);
+
+        expect(lexer.next().type).to.equal(Token.STRING_START);
+
+        var content = lexer.next();
+        expect(content.type).to.equal(Token.STRING_CONTENT);
+        expect(content.text).to.equal('abc');
+      });
+
+      it('emits string end token', function () {
+        var text = '"abc"';
+        var lexer = new Lexer(text);
+
+        expect(lexer.next().type).to.equal(Token.STRING_START);
+
+        var content = lexer.next();
+        expect(content.type).to.equal(Token.STRING_CONTENT);
+        expect(content.text).to.equal('abc');
+
+        expect(lexer.next().type).to.equal(Token.STRING_END);
+      });
+
+      it('supports escaped quotes', function () {
+        var text = '"a\\"bc"';
+        var lexer = new Lexer(text);
+
+        expect(lexer.next().type).to.equal(Token.STRING_START);
+
+        var content = lexer.next();
+        expect(content.type).to.equal(Token.STRING_CONTENT);
+        expect(content.text).to.equal('a\\"bc');
+
+        expect(lexer.next().type).to.equal(Token.STRING_END);
+      });
+
+    });
+
   });
 });

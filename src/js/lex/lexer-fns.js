@@ -80,6 +80,8 @@ exports.lexSymbol = function lexSymbol(lexer) {
         return exports.lexEnclosing;
       } else if (singles.hasOwnProperty(c)) {
         return exports.lexSingle;
+      } else if (character.isQuote(c)) {
+        return exports.lexStringStart;
       } else if (character.isSemicolon(c)) {
         return exports.lexCommentStart;
       } else if (first && character.isColon(c)) {
@@ -182,5 +184,62 @@ exports.lexCommentContent = function lexCommentContent(lexer) {
 
       return exports.lexWhitespace;
     }
+  }
+};
+
+exports.lexStringStart = function lexStringStart(lexer) {
+  var c = lexer.read();
+
+  // EOF
+  if (c === null) {
+    return lexer.eof();
+  }
+
+  if (character.isQuote(c)) {
+    lexer.emit(Token.STRING_START);
+    return exports.lexStringContent;
+  } else {
+    lexer.backup()
+    return exports.lexWhitespace;
+  }
+};
+
+exports.lexStringContent = function lexStringContent(lexer) {
+  var last;
+  while (true) {
+    var c = lexer.read();
+
+    // EOF
+    if (c === null) {
+      lexer.emit(Token.STRING_CONTENT);
+      return lexer.eof();
+    }
+
+    var escaped = last === '\\';
+
+    if (character.isQuote(c) && !escaped) {
+      lexer.backup()
+      lexer.emit(Token.STRING_CONTENT);
+
+      return exports.lexStringEnd;
+    }
+
+    last = c;
+  }
+};
+
+exports.lexStringEnd = function lexStringEnd(lexer) {
+  var c = lexer.read();
+
+  // EOF
+  if (c === null) {
+    return lexer.eof();
+  }
+
+  if (character.isQuote(c)) {
+    lexer.emit(Token.STRING_END);
+    return exports.lexWhitespace;
+  } else {
+    return lexer.unexpectedCharacter(c)
   }
 };

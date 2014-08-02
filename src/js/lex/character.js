@@ -22,6 +22,9 @@ var character = {
   isColon: function (c) {
     return c === ':';
   },
+  isQuote: function (c) {
+    return c === '"';
+  },
   isSemicolon: function (c) {
     return c === ';';
   }
