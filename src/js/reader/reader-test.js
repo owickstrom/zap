@@ -12,5 +12,12 @@ describe('reader', function () {
       expect(equals(read, list));
     });
 
+    it('reads nested lists', function () {
+      var read = Reader.readString('(() ())');
+      var list = List.of(List.of(), List.of());
+
+      expect(equals(read, list));
+    });
+
   });
 })

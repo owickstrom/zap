@@ -1,12 +1,77 @@
 var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
+var List = require('../lang/list.js');
 var TokenScanner = require('./token-scanner.js');
 
-// reader fns
-var readList = require('./read-list.js');
-
 var readerFns = {};
+
+function readOne(reader, type) {
+  var token = reader.scanner.next();
+
+  if (token.type !== type) {
+    reader.scanner.backup()
+    reader.unexpectedToken(token)
+  }
+
+  return token;
+}
+
+function makeReadEnclosed(before, after, construct) {
+  return function readEnclosed(reader) {
+    var inner = [];
+
+    var first = readOne(reader, before);
+
+    if (first === null) {
+      return reader.unexpectedToken(first)
+    }
+
+    while (true) {
+      var token = reader.scanner.next();
+
+      if (token === null) {
+        return reader.unexpectedToken(first)
+      }
+
+      // The enclosed structure got closed, we're done!
+      if (token.type === after) {
+        return construct(inner);
+      }
+
+      // Try to get a reader fn.
+      if (readerFns.hasOwnProperty(token.type)) {
+        var readFn = readerFns[token.type];
+
+        // Ignored tokens.
+        if (readFn === null) {
+          continue
+        }
+
+        reader.scanner.backup();
+        var read = readFn.call(null, reader);
+
+        inner.push(read);
+      } else {
+        // Throw error if no matching reader fn is found.
+        this.unexpectedToken(token);
+      }
+    }
+  };
+}
+
+var readList = makeReadEnclosed(
+  Token.LEFT_PARENTHESIS,
+  Token.RIGHT_PARENTHESIS,
+  function (elements) {
+    return List.of.apply(null, elements);
+  });
+
 readerFns[Token.LEFT_PARENTHESIS] = readList;
+
+// Ignored tokens.
+readerFns[Token.COMMENT_START] = null;
+readerFns[Token.COMMENT_CONTENT] = null;
+readerFns[Token.WHITESPACE] = null;
 
 function Reader(scanner) {
   this.scanner = scanner;
@@ -18,19 +83,19 @@ Reader.prototype.unexpectedToken = function (token) {
 };
 
 Reader.prototype.read = function () {
-  var token = this.scanner.next();
+  var token = this.scanner.peek();
 
   if (readerFns.hasOwnProperty(token.type)) {
     var readFn = readerFns[token.type];
 
-    if (readFn !== null) {
+    if (readFn === null) {
       return null
     }
 
-    this.scanner.backup()
-    return readFn.call(null, token);
+    var result = readFn.call(null, this);
+    return result;
   } else {
-    // Throw error if no matching read fn is found.
+    // Throw error if no matching reader fn is found.
     this.unexpectedToken(token);
   }
 };
@@ -38,7 +103,8 @@ Reader.prototype.read = function () {
 Reader.readString = function (s) {
   var lexer = new Lexer(s);
   var scanner = new TokenScanner(lexer);
-  return new Reader(scanner).read();
+  var reader = new Reader(scanner)
+  return reader.read();
 };
 
 module.exports = Reader;
