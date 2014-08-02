@@ -78,6 +78,8 @@ exports.lexSymbol = function lexSymbol(lexer) {
         return exports.lexWhitespace;
       } else if (enclosing.hasOwnProperty(c)) {
         return exports.lexEnclosing;
+      } else if (singles.hasOwnProperty(c)) {
+        return exports.lexSingle;
       } else if (first && character.isColon(c)) {
         // If we haven't started reading this as a symbol and
         // a colon shows up, then it should be a keyword.
@@ -116,5 +118,28 @@ exports.lexKeyword = function lexKeyword(lexer) {
     }
 
     first = false;
+  }
+};
+
+var singles = {
+  '.': Token.DOT,
+  '/': Token.SLASH
+};
+
+exports.lexSingle = function lexSingle(lexer) {
+  while (true) {
+    var c = lexer.read();
+
+    // EOF
+    if (c === null) {
+      return lexer.eof();
+    }
+
+    if (singles.hasOwnProperty(c)) {
+      lexer.emit(singles[c]);
+    } else {
+      lexer.backup();
+      return exports.lexWhitespace;
+    }
   }
 };

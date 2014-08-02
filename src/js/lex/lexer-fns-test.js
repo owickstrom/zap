@@ -231,5 +231,19 @@ describe('lex', function () {
 
     });
 
+    describe('lexSingle', function () {
+
+      it('emits one token per character', function () {
+        var text = './/.';
+        var lexer = new Lexer(text);
+
+        expect(lexer.next().type).to.equal(Token.DOT);
+        expect(lexer.next().type).to.equal(Token.SLASH);
+        expect(lexer.next().type).to.equal(Token.SLASH);
+        expect(lexer.next().type).to.equal(Token.DOT);
+      });
+
+    });
+
   });
 });
