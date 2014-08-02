@@ -10,7 +10,7 @@ exports.lexWhitespace = function lexWhitespace(lexer) {
       // EOF
       if (c === null) {
         lexer.emitIfNotBlank(Token.WHITESPACE);
-        return lexer.endWith(Token.EOF);
+        return lexer.eof();
       } else {
         lexer.backup()
       }
@@ -38,7 +38,7 @@ exports.lexEnclosing = function lexEnclosing(lexer) {
 
     // EOF
     if (c === null) {
-      return lexer.endWith(Token.EOF);
+      return lexer.eof;
     }
 
     if (enclosing.hasOwnProperty(c)) {
@@ -65,7 +65,7 @@ exports.lexSymbol = function lexSymbol(lexer) {
       // EOF
       if (c === null) {
         lexer.emitIfNotBlank(Token.SYMBOL);
-        return lexer.endWith(Token.EOF);
+        return lexer.eof();
       } else {
         lexer.backup()
       }
@@ -80,6 +80,8 @@ exports.lexSymbol = function lexSymbol(lexer) {
         return exports.lexEnclosing;
       } else if (singles.hasOwnProperty(c)) {
         return exports.lexSingle;
+      } else if (character.isSemicolon(c)) {
+        return exports.lexCommentStart;
       } else if (first && character.isColon(c)) {
         // If we haven't started reading this as a symbol and
         // a colon shows up, then it should be a keyword.
@@ -139,6 +141,45 @@ exports.lexSingle = function lexSingle(lexer) {
       lexer.emit(singles[c]);
     } else {
       lexer.backup();
+      return exports.lexWhitespace;
+    }
+  }
+};
+
+exports.lexCommentStart = function lexCommentStart(lexer) {
+  while (true) {
+    var c = lexer.read();
+
+    // EOF
+    if (c === null) {
+      lexer.emitIfNotBlank(Token.COMMENT_START);
+      return lexer.eof();
+    }
+
+    if (!character.isSemicolon(c)) {
+      lexer.backup()
+      lexer.emitIfNotBlank(Token.COMMENT_START);
+
+      return exports.lexCommentContent;
+    }
+  }
+};
+
+exports.lexCommentContent = function lexCommentContent(lexer) {
+  while (true) {
+    var c = lexer.read();
+
+    // EOF
+    if (c === null) {
+      lexer.emit(Token.COMMENT_CONTENT);
+      return lexer.eof();
+    }
+
+    // New line
+    if (character.isNewline(c)) {
+      lexer.backup()
+      lexer.emit(Token.COMMENT_CONTENT);
+
       return exports.lexWhitespace;
     }
   }

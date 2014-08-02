@@ -12,6 +12,9 @@ Token.KEYWORD = "Keyword";
 Token.DOT = "Dot";
 Token.SLASH = "Slash";
 
+Token.COMMENT_START = "CommentStart";
+Token.COMMENT_CONTENT = "CommentContent";
+
 Token.LEFT_PARENTHESIS = "LeftParenthesis";
 Token.RIGHT_PARENTHESIS = "RightParenthesis";
 

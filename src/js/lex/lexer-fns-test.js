@@ -245,5 +245,60 @@ describe('lex', function () {
 
     });
 
+    describe('lexCommentStart', function () {
+
+      it('emits comment start token', function () {
+        var text = ';';
+        var lexer = new Lexer(text);
+
+        expect(lexer.next().type).to.equal(Token.COMMENT_START);
+      });
+
+      it('emits comment start token with all semicolons', function () {
+        var text = ';;;';
+        var lexer = new Lexer(text);
+
+        var cs = lexer.next();
+        expect(cs.type).to.equal(Token.COMMENT_START);
+        expect(cs.text).to.equal(';;;');
+      });
+
+      it('emits comment content until EOF', function () {
+        var text = ';;; hello';
+        var lexer = new Lexer(text);
+
+        var cs = lexer.next();
+        expect(cs.type).to.equal(Token.COMMENT_START);
+        expect(cs.text).to.equal(';;;');
+
+        var cs = lexer.next();
+        expect(cs.type).to.equal(Token.COMMENT_CONTENT);
+        expect(cs.text).to.equal(' hello');
+
+        var eof = lexer.next();
+        expect(eof.type).to.equal(Token.EOF);
+      });
+
+      it('emits comment content until newline', function () {
+        var text = ';;; hello\n';
+        var lexer = new Lexer(text);
+
+        var cs = lexer.next();
+        expect(cs.type).to.equal(Token.COMMENT_START);
+        expect(cs.text).to.equal(';;;');
+
+        var cs = lexer.next();
+        expect(cs.type).to.equal(Token.COMMENT_CONTENT);
+        expect(cs.text).to.equal(' hello');
+
+        var eof = lexer.next();
+        expect(eof.type).to.equal(Token.WHITESPACE);
+
+        var eof = lexer.next();
+        expect(eof.type).to.equal(Token.EOF);
+      });
+
+    });
+
   });
 });

@@ -115,10 +115,6 @@ Lexer.prototype.eof = function () {
   return null;
 }
 
-Lexer.prototype.endWith = function () {
-  // TODO!
-}
-
 Lexer.prototype.error = function () {
   this._emitWithText(Token.ERROR, sprintf.apply(null, arguments));
   return null;
