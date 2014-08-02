@@ -18,6 +18,9 @@ var character = {
       c == '?' ||
       c == '!' ||
       c == '*';
+  },
+  isColon: function (c) {
+    return c === ':';
   }
 };
 module.exports = character;

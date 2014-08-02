@@ -2,7 +2,7 @@ var sprintf = require('sprintf-js').sprintf;
 var LexerPosition = require('./lexer-position.js');
 var Token = require('./token.js');
 var character = require('./character.js');
-var lexWhitespace = require('./fns/lex-whitespace.js');
+var lexerFns = require('./lexer-fns.js');
 
 function Lexer(input) {
   this.input = input;
@@ -11,7 +11,7 @@ function Lexer(input) {
   this.positions = [];
   this.lastWasNewLine = false;
   this.emitted = [];
-  this.nextLexerFn = lexWhitespace;
+  this.nextLexerFn = lexerFns.lexWhitespace;
 }
 
 Lexer.prototype._startPosition = function () {
@@ -112,6 +112,7 @@ Lexer.prototype.emitIfNotBlank = function (tokenType) {
 
 Lexer.prototype.eof = function () {
   this._emitWithText(Token.EOF, '');
+  return null;
 }
 
 Lexer.prototype.endWith = function () {
@@ -131,7 +132,20 @@ Lexer.prototype.unexpectedCharacter = function (c) {
 Lexer.prototype._emitMore = function () {
   // Run the fn to let it emit tokens and store the fn it
   // returns.
-  this.nextLexerFn = this.nextLexerFn(this);
+  var nextFn = this.nextLexerFn.call(null, this);
+
+  if (nextFn && typeof(nextFn) !== 'function') {
+    var msg =
+      this.nextLexerFn.name +
+      ' should have returned function, but was ' +
+      typeof(nextFn) +
+      ': ' +
+      JSON.stringify(nextFn);
+
+    throw new Error(msg);
+  }
+
+  this.nextLexerFn = nextFn;
 
   // If the lexer fn did not emit any tokens but returned
   // a new lexer fn, let's run that right away.

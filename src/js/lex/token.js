@@ -7,6 +7,7 @@ function Token(type, text, line, column) {
 }
 
 Token.SYMBOL = "Symbol";
+Token.KEYWORD = "Keyword";
 
 Token.LEFT_PARENTHESIS = "LeftParenthesis";
 Token.RIGHT_PARENTHESIS = "RightParenthesis";

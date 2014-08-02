@@ -1,7 +1,17 @@
 var Lexer = require('./lex/lexer.js');
 
 module.exports = {
-  run: function (main) {
-    console.log('Running ' + main);
+  lex: function (code) {
+
+    var lexer = new Lexer(code);
+    while (true) {
+      var token = lexer.next();
+
+      if (token === null) {
+        break;
+      }
+
+      console.log(token.type + ': ' + token.text);
+    }
   }
 };

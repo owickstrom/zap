@@ -1,5 +1,5 @@
-var Lexer = require('../lexer.js');
-var Token = require('../token.js');
+var Lexer = require('./lexer.js');
+var Token = require('./token.js');
 
 describe('lex', function () {
   describe('fns', function () {

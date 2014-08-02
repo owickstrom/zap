@@ -1,5 +1,5 @@
-var Lexer = require('../lexer.js');
-var Token = require('../token.js');
+var Lexer = require('./lexer.js');
+var Token = require('./token.js');
 
 describe('lex', function () {
   describe('fns', function () {
@@ -12,6 +12,21 @@ describe('lex', function () {
         var s = lexer.next();
         expect(s.type).to.equal(Token.SYMBOL);
         expect(s.text).to.equal(text);
+      });
+
+      it('emits symbols separated by spaces', function () {
+        var text = 'abc def';
+        var lexer = new Lexer(text);
+
+        var abc = lexer.next();
+        expect(abc.type).to.equal(Token.SYMBOL);
+        expect(abc.text).to.equal('abc');
+
+        expect(lexer.next().type).to.equal(Token.WHITESPACE);
+
+        var def = lexer.next();
+        expect(def.type).to.equal(Token.SYMBOL);
+        expect(def.text).to.equal('def');
       });
 
       it('does not allow symbols starting with a digit', function () {
