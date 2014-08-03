@@ -53,7 +53,7 @@ function makeReadEnclosed(before, after, construct) {
         inner.push(read);
       } else {
         // Throw error if no matching reader fn is found.
-        this.unexpectedToken(token);
+        reader.unexpectedToken(token);
       }
     }
   };
@@ -82,6 +82,16 @@ readerFns[Token.LEFT_CURLY_BRACKET] = makeReadEnclosed(
   function (elements) {
     return m.map.apply(null, elements);
   });
+
+function readString(reader) {
+  readOne(reader, Token.STRING_START);
+  var content = readOne(reader, Token.STRING_CONTENT);
+  readOne(reader, Token.STRING_END);
+
+  // TODO: Is there a better way to parse string literals? I hope so...
+  return JSON.parse('"' + content.text + '"');
+};
+readerFns[Token.STRING_START] = readString;
 
 // Ignored tokens.
 readerFns[Token.COMMENT_START] = null;

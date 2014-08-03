@@ -33,5 +33,31 @@ describe('reader', function () {
       expect(equals(read, vector));
     });
 
+    it('reads maps', function () {
+      var read = Reader.readString('{}');
+      var vector = m.map({});
+
+      expect(equals(read, vector));
+    });
+
+    it('reads nested maps', function () {
+      var read = Reader.readString('{"key" {}}');
+      var vector = m.map({'key': {}});
+
+      expect(equals(read, vector));
+    });
+
+    it('reads strings', function () {
+      var read = Reader.readString('"hello"');
+
+      expect(equals(read, "hello"));
+    });
+
+    it('reads strings with escaped characters', function () {
+      var read = Reader.readString('"\\n"');
+
+      expect(equals(read, "\n"));
+    });
+
   });
 })
