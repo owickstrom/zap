@@ -1,6 +1,7 @@
 var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
 var TokenScanner = require('./token-scanner.js');
+var Keyword = require('../lang/keyword.js');
 var m = require('mori');
 
 var readerFns = {};
@@ -14,6 +15,12 @@ function readOne(reader, type) {
   }
 
   return token;
+}
+
+function readSimple(type, construct) {
+  return function (reader) {
+    return construct(readOne(reader, type));
+  };
 }
 
 function makeReadEnclosed(before, after, construct) {
@@ -92,6 +99,10 @@ function readString(reader) {
   return JSON.parse('"' + content.text + '"');
 };
 readerFns[Token.STRING_START] = readString;
+
+readerFns[Token.KEYWORD] = readSimple(Token.KEYWORD, function (token) {
+  return new Keyword(token.text);
+});
 
 // Ignored tokens.
 readerFns[Token.COMMENT_START] = null;

@@ -1,5 +1,6 @@
 var Reader = require('./reader.js');
 var equals = require('../lang/equals.js');
+var Keyword = require('../lang/keyword.js');
 var m = require('mori');
 
 describe('reader', function () {
@@ -57,6 +58,13 @@ describe('reader', function () {
       var read = Reader.readString('"\\n"');
 
       expect(equals(read, "\n"));
+    });
+
+    it('reads keywords', function () {
+      var read = Reader.readString(':hello');
+      var keyword = new Keyword(':hello');
+
+      expect(equals(read, keyword));
     });
 
   });
