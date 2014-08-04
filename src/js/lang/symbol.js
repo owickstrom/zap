@@ -14,8 +14,12 @@ Symbol.prototype.toString = function () {
   }
 };
 
+Symbol.isInstance = function (other) {
+  return !!other && other.constructor === Symbol;
+};
+
 Symbol.prototype.equals = function (other) {
-  if (!other || other.constructor !== Symbol) {
+  if (!Symbol.isInstance(other)) {
     return false;
   }
 

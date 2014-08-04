@@ -30,5 +30,25 @@ describe('runtime', function () {
       expect(v).to.be.null;
     });
 
+    it('loads strings', function () {
+      var rt = new Runtime();
+      var symbol = Symbol.inPkg('my-string', 'my-pkg');
+
+      rt.def(symbol, '1');
+
+      var v = rt.loadString('my-pkg/my-string');
+      expect(v).to.equal('1');
+    });
+
+    it('resolves in current pkg', function () {
+      var rt = new Runtime();
+      var symbol = Symbol.withoutPkg('my-string');
+
+      rt.def(symbol, '1');
+
+      var v = rt.loadString('my-string');
+      expect(v).to.equal('1');
+    });
+
   });
 });
