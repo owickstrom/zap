@@ -20,7 +20,6 @@ describe('lang', function () {
     it('parses pkg name strings', function () {
       var one = Symbol.inPkgString("hello", "pkg.subpkg");
       var another = Symbol.inPkg("hello", PkgName.withSegments("pkg", "subpkg"));
-      console.log(one.toString(), another.toString());
       expect(equals(one, another)).to.be.true;
     });
 

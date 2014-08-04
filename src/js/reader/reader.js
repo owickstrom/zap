@@ -1,7 +1,9 @@
 var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
 var TokenScanner = require('./token-scanner.js');
+var Symbol = require('../lang/symbol.js');
 var Keyword = require('../lang/keyword.js');
+var PkgName = require('../lang/pkg-name.js');
 var m = require('mori');
 
 var readerFns = {};
@@ -22,6 +24,104 @@ function readSimple(type, construct) {
     return construct(readOne(reader, type));
   };
 }
+
+function symbolOrLiteral(text) {
+  switch (text) {
+    case 'nil':
+      return null;
+    case 'true':
+      return true;
+    case 'false':
+      return false;
+    default:
+      return Symbol.withoutPkg(text)
+  }
+}
+
+function readSymbol(reader) {
+  var segments = [];
+  var last;
+  var slash;
+  var hasReadName = false;
+
+  while (true) {
+    var token = reader.scanner.next();
+
+    if (token.type === Token.SYMBOL) {
+
+      // Symbols cannot follow symbols.
+      if (last && last.type === Token.SYMBOL) {
+        return reader.unexpectedToken(token);
+      }
+
+      // A token after a slash is the name.
+      if (slash) {
+
+        // Unless we've already read the name.
+        if (hasReadName) {
+          return reader.unexpectedToken(token);
+        }
+
+        hasReadName = true;
+      }
+
+      segments.push(token.text);
+
+    } else if (token.type === Token.SLASH) {
+
+      // A slash can only occur after a symbol.
+      if (last && last.type !== Token.SYMBOL) {
+        return reader.unexpectedToken(token);
+      }
+
+      // Multiple slashes or a slash after the name is not ok.
+      if (slash || hasReadName) {
+        return reader.unexpectedToken(token);
+      }
+
+      slash = token;
+
+    } else if (token.type === Token.DOT) {
+
+      // Dots can only occur after a symbol.
+      if (last && last.type !== Token.SYMBOL) {
+        return reader.unexpectedToken(token);
+      }
+
+      // Dots after a slash and name is not ok.
+      if (slash || hasReadName) {
+        return reader.unexpectedToken(token);
+      }
+
+    } else {
+      // Backup and try to read the segments as a symbol.
+      reader.scanner.backup();
+      break;
+    }
+    last = token;
+  }
+
+  switch (segments.length) {
+    case 0:
+      throw new Error('No symbol tokens read')
+    case 1:
+      if (slash) {
+        return reader.unexpectedToken(slash);
+      }
+      return symbolOrLiteral(segments[0]);
+    default:
+      if (slash) {
+        if (!hasReadName) {
+          return reader.missing(Token.SYMBOL, slash.position.plus(0, 1))
+        }
+        var last = segments.length - 1;
+        var name = new PkgName(segments.slice(0, last));
+        return Symbol.inPkg(segments[last], name);
+      }
+      return new PkgName(segments);
+  }
+}
+readerFns[Token.SYMBOL] = readSymbol;
 
 function makeReadEnclosed(before, after, construct) {
   return function readEnclosed(reader) {
@@ -116,6 +216,10 @@ function Reader(scanner) {
 Reader.prototype.unexpectedToken = function (token) {
   // TODO: Better error message with line/column etc.
   throw new Error('Unexpected token ' + token.type);
+};
+
+Reader.prototype.missing = function (type, position) {
+  throw new Error('Missing ' + type + ' at ' + position.toString());
 };
 
 Reader.prototype.read = function () {
