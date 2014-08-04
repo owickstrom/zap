@@ -18,7 +18,7 @@ exports.lexWhitespace = function lexWhitespace(lexer) {
       lexer.emitIfNotBlank(Token.WHITESPACE);
 
       // TODO: Add lexer fns for newline and comment.
-      return exports.lexSymbol;
+      return exports.lexName;
     }
   }
 };
@@ -50,27 +50,27 @@ exports.lexEnclosing = function lexEnclosing(lexer) {
   }
 };
 
-exports.lexSymbol = function lexSymbol(lexer) {
+exports.lexName = function lexName(lexer) {
   var first = true;
 
   while (true) {
     var c = lexer.read();
 
     if (first && character.isDigit(c)) {
-      return lexer.error('Symbols must not begin with a digit');
+      return lexer.error('Names must not begin with a digit');
     }
 
-    if (!character.isValidSymbolCharacter(c)) {
+    if (!character.isValidNameCharacter(c)) {
 
       // EOF
       if (c === null) {
-        lexer.emitIfNotBlank(Token.SYMBOL);
+        lexer.emitIfNotBlank(Token.NAME);
         return lexer.eof();
       } else {
         lexer.backup()
       }
 
-      lexer.emitIfNotBlank(Token.SYMBOL);
+      lexer.emitIfNotBlank(Token.NAME);
 
       // TODO: Add more lexer fns here...
 
@@ -85,7 +85,7 @@ exports.lexSymbol = function lexSymbol(lexer) {
       } else if (character.isSemicolon(c)) {
         return exports.lexCommentStart;
       } else if (first && character.isColon(c)) {
-        // If we haven't started reading this as a symbol and
+        // If we haven't started reading this as a name and
         // a colon shows up, then it should be a keyword.
         return exports.lexKeyword;
       } else {
@@ -107,7 +107,7 @@ exports.lexKeyword = function lexKeyword(lexer) {
       return lexer.error('Keywords must begin with a colon');
     }
 
-    if (!first && !character.isValidSymbolCharacter(c)) {
+    if (!first && !character.isValidNameCharacter(c)) {
 
       // EOF
       if (c === null) {

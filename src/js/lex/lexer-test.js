@@ -37,23 +37,23 @@ describe('lex', function () {
 
       lexer.read();
       lexer.read();
-      lexer.emit(Token.SYMBOL);
+      lexer.emit(Token.NAME);
 
       var token = lexer.next();
-      expect(token.type).to.equal(Token.SYMBOL);
+      expect(token.type).to.equal(Token.NAME);
       expect(token.text).to.equal('ab');
     });
 
     it('emits non-blank tokens', function () {
       var lexer = new Lexer('ab');
 
-      lexer.emitIfNotBlank(Token.SYMBOL);
+      lexer.emitIfNotBlank(Token.NAME);
       lexer.read();
       lexer.read();
-      lexer.emitIfNotBlank(Token.SYMBOL);
+      lexer.emitIfNotBlank(Token.NAME);
 
       var token = lexer.next();
-      expect(token.type).to.equal(Token.SYMBOL);
+      expect(token.type).to.equal(Token.NAME);
       expect(token.text).to.equal('ab');
     });
 
@@ -61,9 +61,9 @@ describe('lex', function () {
       var lexer = new Lexer('ab');
 
       lexer.read();
-      lexer.emitIfNotBlank(Token.SYMBOL);
+      lexer.emitIfNotBlank(Token.NAME);
       lexer.read();
-      lexer.emitIfNotBlank(Token.SYMBOL);
+      lexer.emitIfNotBlank(Token.NAME);
 
       expect(lexer.next().text).to.equal('a');
       expect(lexer.next().text).to.equal('b');
@@ -73,13 +73,13 @@ describe('lex', function () {
       var lexer = new Lexer('ab\nc');
 
       lexer.read();
-      lexer.emit(Token.SYMBOL);
+      lexer.emit(Token.NAME);
       lexer.read();
-      lexer.emit(Token.SYMBOL);
+      lexer.emit(Token.NAME);
       lexer.read();
-      lexer.emit(Token.SYMBOL);
+      lexer.emit(Token.NAME);
       lexer.read();
-      lexer.emit(Token.SYMBOL);
+      lexer.emit(Token.NAME);
 
       var a = lexer.next();
       expect(a.position.line).to.equal(1);

@@ -6,7 +6,7 @@ function Token(type, text, line, column) {
   this.position = new TokenPosition(line, column);
 }
 
-Token.SYMBOL = "Symbol";
+Token.NAME = "Name";
 Token.KEYWORD = "Keyword";
 
 Token.DOT = "Dot";

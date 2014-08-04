@@ -47,10 +47,10 @@ function readSymbol(reader) {
   while (true) {
     var token = reader.scanner.next();
 
-    if (token.type === Token.SYMBOL) {
+    if (token.type === Token.NAME) {
 
       // Symbols cannot follow symbols.
-      if (last && last.type === Token.SYMBOL) {
+      if (last && last.type === Token.NAME) {
         return reader.unexpectedToken(token);
       }
 
@@ -70,7 +70,7 @@ function readSymbol(reader) {
     } else if (token.type === Token.SLASH) {
 
       // A slash can only occur after a symbol.
-      if (last && last.type !== Token.SYMBOL) {
+      if (last && last.type !== Token.NAME) {
         return reader.unexpectedToken(token);
       }
 
@@ -84,7 +84,7 @@ function readSymbol(reader) {
     } else if (token.type === Token.DOT) {
 
       // Dots can only occur after a symbol.
-      if (last && last.type !== Token.SYMBOL) {
+      if (last && last.type !== Token.NAME) {
         return reader.unexpectedToken(token);
       }
 
@@ -112,7 +112,7 @@ function readSymbol(reader) {
     default:
       if (slash) {
         if (!hasReadName) {
-          return reader.missing(Token.SYMBOL, slash.position.plus(0, 1))
+          return reader.missing(Token.NAME, slash.position.plus(0, 1))
         }
         var last = segments.length - 1;
         var name = new PkgName(segments.slice(0, last));
@@ -121,7 +121,7 @@ function readSymbol(reader) {
       return new PkgName(segments);
   }
 }
-readerFns[Token.SYMBOL] = readSymbol;
+readerFns[Token.NAME] = readSymbol;
 
 function makeReadEnclosed(before, after, construct) {
   return function readEnclosed(reader) {

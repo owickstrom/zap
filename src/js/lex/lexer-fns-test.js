@@ -17,39 +17,39 @@ describe('lex', function () {
 
     });
 
-    describe('lexSymbol', function () {
+    describe('lexName', function () {
 
-      it('emits symbol tokens', function () {
+      it('emits name tokens', function () {
         var text = 'abc';
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal(text);
       });
 
-      it('emits symbols separated by spaces', function () {
+      it('emits names separated by spaces', function () {
         var text = 'abc def';
         var lexer = new Lexer(text);
 
         var abc = lexer.next();
-        expect(abc.type).to.equal(Token.SYMBOL);
+        expect(abc.type).to.equal(Token.NAME);
         expect(abc.text).to.equal('abc');
 
         expect(lexer.next().type).to.equal(Token.WHITESPACE);
 
         var def = lexer.next();
-        expect(def.type).to.equal(Token.SYMBOL);
+        expect(def.type).to.equal(Token.NAME);
         expect(def.text).to.equal('def');
       });
 
-      it('does not allow symbols starting with a digit', function () {
+      it('does not allow name starting with a digit', function () {
         var text = '1a';
         var lexer = new Lexer(text);
 
         var s = lexer.next();
         expect(s.type).to.equal(Token.ERROR);
-        expect(s.text).to.contain('Symbols must not begin with a digit');
+        expect(s.text).to.contain('Names must not begin with a digit');
       });
 
       it('allows ASCII alphanumeric characters', function () {
@@ -57,7 +57,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('a123');
       });
 
@@ -66,7 +66,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('a');
 
         var s = lexer.next();
@@ -79,7 +79,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('a-b');
       });
 
@@ -88,7 +88,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('a_b');
       });
 
@@ -97,7 +97,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('*a*');
       });
 
@@ -106,7 +106,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('a?');
       });
 
@@ -167,7 +167,7 @@ describe('lex', function () {
         var text = 'a:keyword';
         var lexer = new Lexer(text);
 
-        expect(lexer.next().type).to.equal(Token.SYMBOL);
+        expect(lexer.next().type).to.equal(Token.NAME);
         expect(lexer.next().type).to.equal(Token.ERROR);
       });
 
@@ -207,7 +207,7 @@ describe('lex', function () {
         var lexer = new Lexer(text);
 
         var s = lexer.next();
-        expect(s.type).to.equal(Token.SYMBOL);
+        expect(s.type).to.equal(Token.NAME);
         expect(s.text).to.equal('a_b');
       });
 

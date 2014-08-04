@@ -11,7 +11,7 @@ var character = {
   isAlphaNumeric: function (c) {
     return /^\w$/.test(c);
   },
-  isValidSymbolCharacter: function (c) {
+  isValidNameCharacter: function (c) {
     return character.isAlphaNumeric(c) ||
       c == '-' ||
       c == '_' ||
