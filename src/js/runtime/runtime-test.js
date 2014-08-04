@@ -1,3 +1,4 @@
+var mori = require('mori');
 var Runtime = require('./runtime.js');
 var Symbol = require('../lang/symbol.js');
 
@@ -48,6 +49,30 @@ describe('runtime', function () {
 
       var v = rt.loadString('my-string');
       expect(v).to.equal('1');
+    });
+
+    it('returns unevaluated data with quote', function () {
+      var rt = new Runtime();
+
+      var list = rt.loadString('(quote (:a :list))');
+      expect(mori.is_list(list)).to.be.true;
+    });
+
+    it('evals data structures', function () {
+      var rt = new Runtime();
+
+      rt.def(Symbol.withoutPkg('my-string'), '1');
+
+      var s = rt.loadString('(eval (quote my-string))');
+      expect(s).to.equal('1');
+    });
+
+    it('defs as a special form', function () {
+      var rt = new Runtime();
+
+      rt.loadString('(def my-string "1")');
+      var s = rt.loadString('my-string');
+      expect(s).to.equal('1');
     });
 
   });
