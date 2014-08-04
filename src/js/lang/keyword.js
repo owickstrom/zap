@@ -1,5 +1,9 @@
 function Keyword(text) {
-  this.text = text;
+  if (text && text.length > 0 && text[0] === ':') {
+    this.text = text;
+  } else {
+    throw new Error('Invalid keyword: "' + text + '"');
+  }
 }
 
 Keyword.prototype.equals = function (other) {
