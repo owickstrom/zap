@@ -147,6 +147,7 @@ describe('runtime', function () {
       expect(string).to.equal('hello world');
     });
 
+    it('creates macros with macro');
 
   });
 });
