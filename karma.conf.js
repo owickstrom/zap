@@ -15,6 +15,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'bower_components/when/es6-shim/Promise.js',
+      { pattern: 'src/zap/**', watched: true, included: false, served: true }
     ],
 
 

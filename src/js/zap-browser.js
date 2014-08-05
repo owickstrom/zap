@@ -1,4 +1,5 @@
 var Lexer = require('./lex/lexer.js');
+var Runtime = require('./runtime/runtime.js');
 
 module.exports = {
   lex: function (code) {
@@ -13,5 +14,6 @@ module.exports = {
 
       console.log(token.type + ': ' + token.text);
     }
-  }
+  },
+  Runtime: Runtime
 };

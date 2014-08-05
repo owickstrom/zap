@@ -240,11 +240,43 @@ Reader.prototype.read = function () {
   }
 };
 
+Reader.prototype.readTopLevelForms = function () {
+  var forms = m.vector();
+
+  while (true) {
+    var token = this.scanner.peek();
+
+    if (token === null) {
+      break;
+    }
+
+    if (token.type === Token.LEFT_PARENTHESIS) {
+      var readFn = readerFns[token.type];
+
+      var result = readFn.call(null, this);
+      forms = m.conj(forms, result);
+    } else if (token.type !== token.COMMENT_START &&
+               token.type !== token.CommentContent &&
+              token.type !== token.Whitespace) {
+      this.unexpectedToken(token);
+    }
+  }
+
+  return forms;
+};
+
 Reader.readString = function (s) {
   var lexer = new Lexer(s);
   var scanner = new TokenScanner(lexer);
   var reader = new Reader(scanner)
   return reader.read();
+};
+
+Reader.readTopLevelFormsString = function (s) {
+  var lexer = new Lexer(s);
+  var scanner = new TokenScanner(lexer);
+  var reader = new Reader(scanner)
+  return reader.readTopLevelForms();
 };
 
 module.exports = Reader;

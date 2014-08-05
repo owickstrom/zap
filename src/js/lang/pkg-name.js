@@ -28,6 +28,10 @@ PkgName.prototype.equals = function (other) {
   return mori.equals(this.segments, other.segments);
 };
 
+PkgName.prototype.segmentsAsArray = function () {
+  return mori.clj_to_js(this.segments);
+}
+
 PkgName.prototype.toString = function () {
   return mori.reduce(joinWithDot, this.segments);
 }
