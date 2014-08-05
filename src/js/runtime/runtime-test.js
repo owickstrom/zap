@@ -7,6 +7,16 @@ var Keyword = require('../lang/keyword.js');
 describe('runtime', function () {
   describe('Runtime', function () {
 
+    function defStr(rt) {
+      rt.def(Symbol.withoutPkg('str'), {
+        apply: function (seq) {
+          return mori.reduce(function (a, b) {
+            return a + b;
+          }, '', seq);
+        }
+      });
+    }
+
     it('evals keywords', function () {
       var rt = new Runtime();
       var keyword = rt.loadString(':my-keyword');
@@ -101,10 +111,7 @@ describe('runtime', function () {
 
     it('lets local bindings that build on each other', function () {
       var rt = new Runtime();
-
-      rt.def(Symbol.withoutPkg('str'), function () {
-        return Array.prototype.slice.call(arguments, 0).join('');
-      });
+      defStr(rt);
 
       var string = rt.loadString('(let [h "hello" w " world"] (str h w))');
       expect(string).to.equal('hello world');
@@ -129,6 +136,17 @@ describe('runtime', function () {
         new Keyword(':b'));
       expect(equals(map, expected)).to.be.true;
     });
+
+    it('creates closures with fn', function () {
+      var rt = new Runtime();
+      defStr(rt);
+
+      rt.loadString('(def str2 (fn [a b] (str a b)))')
+
+      var string = rt.loadString('(str2 "hello" " world")');
+      expect(string).to.equal('hello world');
+    });
+
 
   });
 });

@@ -1,6 +1,7 @@
 var mori = require('mori');
 var equals = require('../lang/equals.js');
 var Symbol = require('../lang/symbol.js');
+var Closure = require('./closure.js');
 var SpecialForms = require('./special-forms.js');
 
 var specialForms = new SpecialForms();
@@ -20,7 +21,7 @@ specialForms.add('eval', function (scope, args) {
 // which is uses to create a new var in a pkg.
 specialForms.add('def', function (scope, args) {
   var symbol = mori.first(args);
-  var value = mori.first(mori.rest(args));
+  var value = scope.eval(mori.first(mori.rest(args)));
   return scope, scope.runtime.def(symbol, value);
 });
 
@@ -33,6 +34,11 @@ specialForms.add('let', function (scope, args) {
   var newScope = Scope.create(bindings, scope, true);
   return newScope.eval(body);
 });
+//
+// fn creates a closure.
+specialForms.add('fn', function (scope, args) {
+  return new Closure(scope, args);
+});
 
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
@@ -40,6 +46,10 @@ function Scope(runtime, values, subScope) {
   this._subScope = subScope;
 
 }
+
+Scope.prototype.wrap = function (bindings, evalArgs) {
+  return Scope.create(bindings, this, evalArgs);
+};
 
 Scope.create = function (bindings, subScope, evalArgs) {
   var count = mori.count(bindings);
@@ -103,8 +113,8 @@ Scope.prototype.eval = function (form) {
     // TODO: macro call
 
     var fn = this.eval(first);
-    var args = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
-    return fn.apply(null, args);
+    var args = mori.map(eval, mori.rest(seq));
+    return fn.apply(args);
 
   } else if (mori.is_vector(form)) {
     return mori.into(mori.vector(), mori.map(eval, form));
