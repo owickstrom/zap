@@ -1,18 +1,91 @@
 var mori = require('mori');
 var equals = require('../lang/equals.js');
 var Symbol = require('../lang/symbol.js');
+var SpecialForms = require('./special-forms.js');
 
-var quote = Symbol.withoutPkg('quote');
-var eval = Symbol.withoutPkg('eval');
-var def = Symbol.withoutPkg('def');
+var specialForms = new SpecialForms();
 
-function Scope(runtime) {
+// qoute returns it's arguments unevaluated.
+specialForms.add('quote', function (scope, args) {
+  return mori.first(args);
+});
+
+// eval calls this method.
+specialForms.add('eval', function (scope, args) {
+  var data = mori.first(args);
+  return scope.eval(scope.eval(data));
+});
+
+// def does not eval the first argument, the symbol,
+// which is uses to create a new var in a pkg.
+specialForms.add('def', function (scope, args) {
+  var symbol = mori.first(args);
+  var value = mori.first(mori.rest(args));
+  return scope, scope.runtime.def(symbol, value);
+});
+
+// let introduces a new lexical scope.
+specialForms.add('let', function (scope, args) {
+  var bindings = mori.first(args);
+  // TODO: Support implicit do.
+  var body = mori.first(mori.rest(args));
+
+  var newScope = Scope.create(bindings, scope, true);
+  return newScope.eval(body);
+});
+
+function Scope(runtime, values, subScope) {
   this.runtime = runtime;
-  this.bindings = mori.hash_map();
+  this._values = values;
+  this._subScope = subScope;
+
 }
 
+Scope.create = function (bindings, subScope, evalArgs) {
+  var count = mori.count(bindings);
+
+  if (count == 0) {
+    return subScope;
+  } else if (count % 2 !== 0) {
+    throw new Error('Scope.create requires a bindings vector with even length');
+  }
+
+  var symbol = mori.first(bindings);
+  var rest = mori.rest(bindings);
+  var value = mori.first(rest);
+
+  if (!Symbol.isInstance(symbol)) {
+    throw new Error(symbol.toString() + ' is not a symbol');
+  }
+
+  var key = symbol.name;
+
+  if (evalArgs) {
+    value = subScope.eval(value);
+  }
+
+  var values = mori.hash_map(key, value);
+
+  return Scope.create(
+    mori.rest(rest),
+    new Scope(subScope.runtime, values, subScope),
+    evalArgs);
+}
+
+Scope.empty = function (runtime) {
+  return Scope.create(runtime, mori.hash_map(), null);
+};
+
 Scope.prototype.resolve = function (symbol) {
-  return mori.get(this.bindings, symbol.toString());
+  if(mori.has_key(this._values, symbol.name)) {
+    return mori.get(this._values, symbol.name);
+  }
+
+  if (this._subScope) {
+    return this._subScope.resolve(symbol);
+  }
+
+  return null;
 }
 
 Scope.prototype.eval = function (form) {
@@ -31,29 +104,16 @@ Scope.prototype.eval = function (form) {
       } else {
         throw new Error('Could not resolve symbol: ' + form.toString());
       }
+    } else {
+      return form;
     }
   }
 
   var seq = mori.seq(form);
   var first = mori.first(seq);
 
-  // qoute is a special form that returns it's arguments unevaluated.
-  if (equals(quote, first)) {
-    return mori.first(mori.rest(seq));
-  }
-
-  // eval is a special form that calls this method.
-  if (equals(eval, first)) {
-    var data = mori.first(mori.rest(seq));
-    return this.eval(this.eval(data));
-  }
-
-  // def is a special form that does not eval the first argument, the symbol.
-  if (equals(def, first)) {
-    var args = mori.rest(seq);
-    var symbol = mori.first(args);
-    var value = mori.first(mori.rest(args));
-    return this.runtime.def(symbol, value);
+  if (specialForms.has(first)) {
+    return specialForms.eval(this, first, seq);
   }
 };
 
