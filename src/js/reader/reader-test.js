@@ -45,9 +45,16 @@ describe('reader', function () {
 
     it('reads nested maps', function () {
       var read = Reader.readString('{"key" {}}');
-      var vector = m.map({'key': {}});
+      var map = m.hash_map('key', m.hash_map());
 
-      expect(equals(read, vector)).to.be.true;
+      expect(equals(read, map)).to.be.true;
+    });
+
+    it('reads maps with keywords', function () {
+      var read = Reader.readString('{:key :a}');
+      var map = m.hash_map(new Keyword(':key'), new Keyword(':a'));
+
+      expect(equals(read, map)).to.be.true;
     });
 
     it('reads strings', function () {

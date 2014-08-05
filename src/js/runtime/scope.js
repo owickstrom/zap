@@ -89,7 +89,28 @@ Scope.prototype.resolve = function (symbol) {
 }
 
 Scope.prototype.eval = function (form) {
-  if (!mori.is_list(form)) {
+  var self = this;
+  var eval = function (value) { return self.eval(value); }
+
+  if (mori.is_list(form)) {
+    var seq = mori.seq(form);
+    var first = mori.first(seq);
+
+    if (specialForms.has(first)) {
+      return specialForms.eval(this, first, seq);
+    }
+    // TODO: fn call and macros
+
+  } else if (mori.is_vector(form)) {
+    return mori.into(mori.vector(), mori.map(eval, form));
+  } else if (mori.is_map(form)) {
+    function assocEvaled(m, key, value) {
+      return mori.assoc(m, eval(key), eval(value));
+    }
+    return mori.reduce_kv(assocEvaled, mori.hash_map(), form);
+  } else {
+
+    // Symbols are automatically derefed.
     if (Symbol.isInstance(form)) {
       var bound = this.resolve(form);
 
@@ -109,12 +130,6 @@ Scope.prototype.eval = function (form) {
     }
   }
 
-  var seq = mori.seq(form);
-  var first = mori.first(seq);
-
-  if (specialForms.has(first)) {
-    return specialForms.eval(this, first, seq);
-  }
 };
 
 module.exports = Scope;

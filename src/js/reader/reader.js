@@ -187,7 +187,7 @@ readerFns[Token.LEFT_CURLY_BRACKET] = makeReadEnclosed(
   Token.LEFT_CURLY_BRACKET,
   Token.RIGHT_CURLY_BRACKET,
   function (elements) {
-    return m.map.apply(null, elements);
+    return m.hash_map.apply(null, elements);
   });
 
 function readString(reader) {

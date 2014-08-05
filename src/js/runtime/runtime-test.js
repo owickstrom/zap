@@ -99,5 +99,25 @@ describe('runtime', function () {
       expect(equals(list, new Keyword(':a'))).to.true;
     });
 
+    it('evals vectors of local bindings', function () {
+      var rt = new Runtime();
+
+      var vector = rt.loadString('(let [a :a b :b] [a b])');
+      var expected = mori.vector(new Keyword(':a'), new Keyword(':b'));
+      expect(equals(vector, expected)).to.be.true;
+    });
+
+    it('evals maps of local bindings', function () {
+      var rt = new Runtime();
+
+      var map = rt.loadString('(let [a :a b :b] {a a b b})');
+      var expected = mori.hash_map(
+        new Keyword(':a'),
+        new Keyword(':a'),
+        new Keyword(':b'),
+        new Keyword(':b'));
+      expect(equals(map, expected)).to.be.true;
+    });
+
   });
 });
