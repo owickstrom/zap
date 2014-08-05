@@ -99,7 +99,12 @@ Scope.prototype.eval = function (form) {
     if (specialForms.has(first)) {
       return specialForms.eval(this, first, seq);
     }
-    // TODO: fn call and macros
+
+    // TODO: macro call
+
+    var fn = this.eval(first);
+    var args = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
+    return fn.apply(null, args);
 
   } else if (mori.is_vector(form)) {
     return mori.into(mori.vector(), mori.map(eval, form));

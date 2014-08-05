@@ -99,6 +99,17 @@ describe('runtime', function () {
       expect(equals(list, new Keyword(':a'))).to.true;
     });
 
+    it('lets local bindings that build on each other', function () {
+      var rt = new Runtime();
+
+      rt.def(Symbol.withoutPkg('str'), function () {
+        return Array.prototype.slice.call(arguments, 0).join('');
+      });
+
+      var string = rt.loadString('(let [h "hello" w " world"] (str h w))');
+      expect(string).to.equal('hello world');
+    });
+
     it('evals vectors of local bindings', function () {
       var rt = new Runtime();
 
