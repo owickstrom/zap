@@ -16,14 +16,19 @@ function Runtime(base) {
   this._loader = new Loader(base);
 }
 
+Runtime.prototype.addPreDefs = function () {
+  return Promise.all([
+    this.def(Symbol.inPkg('add', zapCore), new WrappedFn(function (a, b) {
+      return a + b;
+    }))
+  ]);
+};
+
 Runtime.prototype.start = function () {
   var self = this;
-  //this.require(zapCore);
 
-  return this.def(Symbol.inPkg(zapCore, 'add'), new WrappedFn(function (a, b) {
-    return a + b;
-  })).then(function () {
-    return self;
+  return self.addPreDefs().then(function () {
+    return self.require(zapCore);
   });
 };
 
@@ -48,19 +53,23 @@ Runtime.prototype._qualifiedOrCurrentPkg = function (symbol) {
 };
 
 Runtime.prototype.def = function (symbol, value) {
-  return Promise.resolve(this._qualifiedOrCurrentPkg(symbol).def(symbol, value));
+  var pkg = this._qualifiedOrCurrentPkg(symbol);
+  return Promise.resolve(pkg.def(symbol, value));
 };
 
 Runtime.prototype.resolve = function (symbol) {
- return this._qualifiedOrCurrentPkg(symbol).resolve(symbol);
+  var pkg = this._qualifiedOrCurrentPkg(symbol);
+  return pkg.resolve(symbol);
 };
 
 Runtime.prototype.require = function (pkgName) {
   var self = this;
-  return this._loader.loadSource(pkgName).then(function (source) {
-    self.loadTopLevelFormsString(source);
-  }, function (err) {
-    return 'Failed to require ' + pkgName.toString() + ': ' + err;
+  return new Promise(function (resolve, reject) {
+    self._loader.loadSource(pkgName).then(function (source) {
+      resolve(self.loadTopLevelFormsString(source));
+    }, function (err) {
+      reject(new Error('Failed to require ' + pkgName.toString() + ': ' + err));
+    });
   });
 };
 
@@ -70,28 +79,44 @@ Runtime.prototype.eval = function (value) {
 
 Runtime.prototype.evalForms = function (forms) {
   var self = this;
-  var promises =
-    mori.clj_to_js(
-      mori.map(forms, function (form) {
-    return self.eval(form);
-  }));
-  return Promise.all(promises);
+
+  if (mori.count(forms) === 0) {
+    return Promise.resolve(null);
+  }
+
+  return new Promise(function (resolve, reject) {
+    self.eval(mori.first(forms)).then(function (evaled) {
+      self.evalForms(mori.rest(forms)).then(function (restEvaled) {
+        resolve(mori.cons(evaled, restEvaled));
+      }, reject);
+    });
+  });
 };
 
 Runtime.prototype.loadString = function (s) {
-  var value = Reader.readString(s);
-  return this.eval(value);
-};
+  var self = this;
 
-Runtime.prototype.loadTopLevelFormsString = function (s) {
-  var forms = Reader.readTopLevelFormsString(s);
-  return this.evalForms(forms);
+  return new Promise(function (resolve, reject) {
+    try {
+      var value = Reader.readString(s);
+      return resolve(self.eval(value));
+    } catch (e) {
+      return reject(e);
+    }
+  });
 };
 
 Runtime.prototype.loadTopLevelFormsString = function (s) {
   var self = this;
-  var forms = Reader.readTopLevelFormsString(s);
-  return this.evalForms(forms);
+
+  return new Promise(function (resolve, reject) {
+    try {
+      var forms = Reader.readTopLevelFormsString(s);
+      resolve(self.evalForms(forms));
+    } catch (e) {
+      return reject(e);
+    }
+  });
 };
 
 module.exports = Runtime;

@@ -1,3 +1,3 @@
-(def str (fn [a b] (zap.core/add a b)))
+(def str (fn [a b] (add a b)))
 
-(println (str "hello" " world"))
+(str "hello" " world")

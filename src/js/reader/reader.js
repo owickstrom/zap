@@ -250,20 +250,26 @@ Reader.prototype.readTopLevelForms = function () {
   var forms = m.vector();
 
   while (true) {
-    var token = this.scanner.peek();
+    var token = this.scanner.next();
 
-    if (token === null) {
+    if (!token || token.type === Token.EOF) {
       break;
     }
+
+    var isIgnored = token.type === Token.COMMENT_START ||
+               token.type === Token.COMMENT_CONTENT ||
+               token.type === Token.EOF ||
+              token.type === Token.WHITESPACE;
 
     if (token.type === Token.LEFT_PARENTHESIS) {
       var readFn = readerFns[token.type];
 
+      this.scanner.backup();
       var result = readFn.call(null, this);
       forms = m.conj(forms, result);
-    } else if (token.type !== token.COMMENT_START &&
-               token.type !== token.CommentContent &&
-              token.type !== token.Whitespace) {
+    } else if (isIgnored) {
+      continue;
+    } else {
       this.unexpectedToken(token);
     }
   }

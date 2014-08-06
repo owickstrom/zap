@@ -3,6 +3,7 @@ var Runtime = require('./runtime.js');
 var equals = require('../lang/equals.js');
 var Symbol = require('../lang/symbol.js');
 var Keyword = require('../lang/keyword.js');
+var PkgName = require('../lang/pkg-name.js');
 
 describe('runtime', function () {
   describe('Runtime', function () {
@@ -22,6 +23,29 @@ describe('runtime', function () {
         }
       });
     }
+
+    it('evals forms', function () {
+      var forms = mori.list('[]', '[]', '[]');
+      return rt.evalForms(forms).then(function (evaled) {
+        expect(mori.count(evaled)).to.equal(3);
+      });
+    });
+
+    it('loads forms', function () {
+      var forms = '(quote [])\n(quote [])';
+      return rt.loadTopLevelFormsString(forms).then(function (evaled) {
+        expect(mori.count(evaled)).to.equal(2);
+      });
+    });
+
+    it('requires pkgs', function () {
+      var core = PkgName.withSegments('zap', 'core');
+      return rt.require(core).then(function (required) {
+        return rt.resolve(Symbol.inPkg('add', core)).then(function (addVar) {
+          expect(addVar.deref().apply(mori.list(1, 2))).to.equal(3);
+        });
+      });
+    });
 
     it('evals keywords', function () {
       return rt.loadString(':my-keyword').then(function (keyword) {

@@ -38,7 +38,7 @@ exports.lexEnclosing = function lexEnclosing(lexer) {
 
     // EOF
     if (c === null) {
-      return lexer.eof;
+      return lexer.eof();
     }
 
     if (enclosing.hasOwnProperty(c)) {

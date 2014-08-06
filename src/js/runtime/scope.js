@@ -158,7 +158,7 @@ Scope.prototype.eval = function (form) {
           if (v) {
             return resolve(v.deref());
           } else {
-            return reject('Could not resolve symbol: ' + form.toString());
+            return reject(new Error('Could not resolve symbol: ' + form.toString()));
           }
         });
 
