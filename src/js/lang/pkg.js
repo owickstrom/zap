@@ -7,12 +7,13 @@ function Pkg(name) {
 }
 
 Pkg.prototype.resolve = function (symbol) {
-  return mori.get(this.vars, symbol.name);
+  return Promise.resolve(mori.get(this.vars, symbol.name));
 }
 
 Pkg.prototype.def = function (symbol, value) {
   var v = new Var(this, symbol.name, value);
   this.vars = mori.assoc(this.vars, symbol.name, v);
+  return Promise.resolve(v);
 }
 
 module.exports = Pkg;

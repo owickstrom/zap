@@ -8,21 +8,28 @@ var specialForms = new SpecialForms();
 
 // qoute returns it's arguments unevaluated.
 specialForms.add('quote', function (scope, args) {
-  return mori.first(args);
+  return Promise.resolve(mori.first(args));
 });
 
 // eval calls this method.
 specialForms.add('eval', function (scope, args) {
-  var data = mori.first(args);
-  return scope.eval(scope.eval(data));
+  var form = mori.first(args);
+  return new Promise(function (resolve, reject) {
+    return scope.eval(form).then(function (data) {
+      return resolve(scope.eval(data));
+    }, reject);
+  });
 });
 
 // def does not eval the first argument, the symbol,
 // which is uses to create a new var in a pkg.
 specialForms.add('def', function (scope, args) {
   var symbol = mori.first(args);
-  var value = scope.eval(mori.first(mori.rest(args)));
-  return scope, scope.runtime.def(symbol, value);
+  var value = mori.first(mori.rest(args));
+  var evaled = scope.eval(value);
+  return evaled.then(function (evaled) {
+    return scope.runtime.def(symbol, evaled);
+  });
 });
 
 // let introduces a new lexical scope.
@@ -98,53 +105,68 @@ Scope.prototype.resolve = function (symbol) {
   return null;
 }
 
+// Evals the keys and values in the map and returns a promise of a new map
+// constructed from the evaled keys and values.
+function evalMap(scope, map) {
+  function assocEvaled(pairs, key, value) {
+    var pair = [scope.eval(key), scope.eval(value)];
+    return pairs.concat(pair);
+  }
+  var evaledPromises = mori.reduce_kv(assocEvaled, [], map);
+  return Promise.all(evaledPromises).then(function (evaled) {
+    return mori.hash_map.apply(null, evaled);
+  });
+}
+
 Scope.prototype.eval = function (form) {
   var self = this;
   var eval = function (value) { return self.eval(value); }
+  return new Promise(function (resolve, reject) {
 
-  if (mori.is_list(form)) {
-    var seq = mori.seq(form);
-    var first = mori.first(seq);
+    if (mori.is_list(form)) {
+      var seq = mori.seq(form);
+      var first = mori.first(seq);
 
-    if (specialForms.has(first)) {
-      return specialForms.eval(this, first, seq);
-    }
-
-    // TODO: macro call
-
-    var fn = this.eval(first);
-    var args = mori.map(eval, mori.rest(seq));
-    return fn.apply(args);
-
-  } else if (mori.is_vector(form)) {
-    return mori.into(mori.vector(), mori.map(eval, form));
-  } else if (mori.is_map(form)) {
-    function assocEvaled(m, key, value) {
-      return mori.assoc(m, eval(key), eval(value));
-    }
-    return mori.reduce_kv(assocEvaled, mori.hash_map(), form);
-  } else {
-
-    // Symbols are automatically derefed.
-    if (Symbol.isInstance(form)) {
-      var bound = this.resolve(form);
-
-      if (bound) {
-        return bound;
+      if (specialForms.has(first)) {
+        return resolve(specialForms.eval(self, first, seq));
       }
 
-      var v = this.runtime.resolve(form);
+      // TODO: macro call
 
-      if (v) {
-        return v.deref();
-      } else {
-        throw new Error('Could not resolve symbol: ' + form.toString());
-      }
+      self.eval(first).then(function (fn) {
+        var argPromises = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
+        Promise.all(argPromises).then(function (args) {
+          return resolve(fn.apply(mori.seq(args)));
+        });
+      });
+
+    } else if (mori.is_vector(form)) {
+      return mori.into(mori.vector(), mori.map(eval, form));
+    } else if (mori.is_map(form)) {
+      return resolve(evalMap(self, form));
     } else {
-      return form;
-    }
-  }
 
+      // Symbols are automatically derefed.
+      if (Symbol.isInstance(form)) {
+        var bound = self.resolve(form);
+
+        if (bound) {
+          return resolve(bound);
+        }
+
+        self.runtime.resolve(form).then(function (v) {
+          if (v) {
+            return resolve(v.deref());
+          } else {
+            return reject('Could not resolve symbol: ' + form.toString());
+          }
+        });
+
+      } else {
+        return resolve(form);
+      }
+    }
+  });
 };
 
 module.exports = Scope;

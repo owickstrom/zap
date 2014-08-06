@@ -215,7 +215,13 @@ function Reader(scanner) {
 
 Reader.prototype.unexpectedToken = function (token) {
   // TODO: Better error message with line/column etc.
-  throw new Error('Unexpected token ' + token.type);
+  throw new Error(
+    'Unexpected token ' +
+    token.type +
+    ' "' +
+    token.text +
+    '" at ' +
+    token.position.toString());
 };
 
 Reader.prototype.missing = function (type, position) {

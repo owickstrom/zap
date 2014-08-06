@@ -7,19 +7,25 @@ var PkgName = require('../lang/pkg-name.js');
 var WrappedFn = require('../lang/wrapped-fn.js');
 var Loader = require('./loader.js');
 
+var zapCore = PkgName.withSegments('zap', 'core');
+
 function Runtime(base) {
   this.rootScope = new Scope(this);
   this.pkgs = mori.hash_map();
-  this.pkg = this.getPkg(PkgName.withSegments('user'));
+  this.pkg = this.getPkg(zapCore);
   this._loader = new Loader(base);
-
-  var zapCore = PkgName.withSegments('zap', 'core');
-  this.require(zapCore);
-
-  this.def(Symbol.inPkg(zapCore, 'add'), new WrappedFn(function (a, b) {
-    return a + b;
-  }));
 }
+
+Runtime.prototype.start = function () {
+  var self = this;
+  //this.require(zapCore);
+
+  return this.def(Symbol.inPkg(zapCore, 'add'), new WrappedFn(function (a, b) {
+    return a + b;
+  })).then(function () {
+    return self;
+  });
+};
 
 Runtime.prototype.currentPkg = function () {
   return this.pkg;
@@ -42,18 +48,19 @@ Runtime.prototype._qualifiedOrCurrentPkg = function (symbol) {
 };
 
 Runtime.prototype.def = function (symbol, value) {
-  this._qualifiedOrCurrentPkg(symbol).def(symbol, value);
+  return Promise.resolve(this._qualifiedOrCurrentPkg(symbol).def(symbol, value));
 };
 
 Runtime.prototype.resolve = function (symbol) {
- return  this._qualifiedOrCurrentPkg(symbol).resolve(symbol);
+ return this._qualifiedOrCurrentPkg(symbol).resolve(symbol);
 };
 
 Runtime.prototype.require = function (pkgName) {
+  var self = this;
   return this._loader.loadSource(pkgName).then(function (source) {
-    this.loadTopLevelFormsString(source);
+    self.loadTopLevelFormsString(source);
   }, function (err) {
-    console.error(err);
+    return 'Failed to require ' + pkgName.toString() + ': ' + err;
   });
 };
 
@@ -63,10 +70,12 @@ Runtime.prototype.eval = function (value) {
 
 Runtime.prototype.evalForms = function (forms) {
   var self = this;
-  forms = mori.seq(forms);
-  mori.each(forms, function (form) {
-    self.eval(form);
-  });
+  var promises =
+    mori.clj_to_js(
+      mori.map(forms, function (form) {
+    return self.eval(form);
+  }));
+  return Promise.all(promises);
 };
 
 Runtime.prototype.loadString = function (s) {
@@ -82,7 +91,7 @@ Runtime.prototype.loadTopLevelFormsString = function (s) {
 Runtime.prototype.loadTopLevelFormsString = function (s) {
   var self = this;
   var forms = Reader.readTopLevelFormsString(s);
-  mori.each(function (form) { self.eval(form); }, forms);
+  return this.evalForms(forms);
 };
 
 module.exports = Runtime;
