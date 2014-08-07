@@ -217,5 +217,41 @@ describe('runtime', function () {
       });
     });
 
+    it('does equals', function () {
+      return rt.loadString('(= :a :a)').then(function (r) {
+        expect(r).to.equal(true);
+      });
+    });
+
+    it('does equals on stuff that is not equal', function () {
+      return rt.loadString('(= :a :b)').then(function (r) {
+        expect(r).to.equal(false);
+      });
+    });
+
+    it('compares less than', function () {
+      return rt.loadString('(< "a" "b")').then(function (r) {
+        expect(r).to.equal(true);
+      });
+    });
+
+    it('compares less than or equals', function () {
+      return rt.loadString('(<= "a" "a")').then(function (r) {
+        expect(r).to.equal(true);
+      });
+    });
+
+    it('compares greater than', function () {
+      return rt.loadString('(> "b" "a")').then(function (r) {
+        expect(r).to.equal(true);
+      });
+    });
+
+    it('compares greater than or equals', function () {
+      return rt.loadString('(>= "a" "a")').then(function (r) {
+        expect(r).to.equal(true);
+      });
+    });
+
   });
 });

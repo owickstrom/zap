@@ -1,3 +1,17 @@
+var validNonAlphaNumeric = [
+  '_',
+  '.',
+  '+',
+  '-',
+  '*',
+  '/',
+  '%',
+  '<',
+  '>',
+  '=',
+  '?',
+  '!'
+];
 var character = {
   isWhitespace: function (c) {
     return character.isNewline(c) || c === '\t' || c === ' ';
@@ -15,15 +29,7 @@ var character = {
     return /^\w$/.test(c);
   },
   isValidNameCharacter: function (c) {
-    return character.isAlphaNumeric(c) ||
-      c == '_' ||
-      c == '.' ||
-      c == '+' ||
-      c == '-' ||
-      c == '*' ||
-      c == '/' ||
-      c == '?' ||
-      c == '!';
+    return character.isAlphaNumeric(c) || validNonAlphaNumeric.indexOf(c) !== -1;
   },
   isColon: function (c) {
     return c === ':';
