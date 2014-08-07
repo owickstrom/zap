@@ -14,16 +14,6 @@ describe('runtime', function () {
       return rt.start();
     });
 
-    function defStr(rt) {
-      return rt.def(Symbol.withoutPkg('str'), {
-        apply: function (seq) {
-          return mori.reduce(function (a, b) {
-            return a + b;
-          }, '', seq);
-        }
-      });
-    }
-
     it('evals forms', function () {
       var forms = mori.list('[]', '[]', '[]');
       return rt.evalForms(forms).then(function (evaled) {
@@ -133,11 +123,9 @@ describe('runtime', function () {
     });
 
     it('lets local bindings that build on each other', function () {
-      return defStr(rt).then(function () {
         return rt.loadString('(let [h "hello" w " world"] (str h w))').then(function (string) {
           expect(string).to.equal('hello world');
         });
-      });
     });
 
     it('evals vectors of local bindings', function () {
@@ -159,13 +147,11 @@ describe('runtime', function () {
     });
 
     it('creates closures with fn', function () {
-      return defStr(rt).then(function () {
         return rt.loadString('(def str2 (fn [a b] (str a b)))').then(function () {
           return rt.loadString('(str2 "hello" " world")').then(function (string){
             expect(string).to.equal('hello world');
           });
         });
-      });
     });
 
     it('chains returned promises from functions', function () {
