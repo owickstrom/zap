@@ -147,9 +147,9 @@ describe('runtime', function () {
     });
 
     it('creates closures with fn', function () {
-        return rt.loadString('(def str2 (fn [a b] (str a b)))').then(function () {
-          return rt.loadString('(str2 "hello" " world")').then(function (string){
-            expect(string).to.equal('hello world');
+        return rt.loadString('(def shout (fn [a b] (str a "!")))').then(function () {
+          return rt.loadString('(shout "hello")').then(function (string){
+            expect(string).to.equal('hello!');
           });
         });
     });
