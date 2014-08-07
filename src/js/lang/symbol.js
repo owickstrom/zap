@@ -2,6 +2,10 @@ var equals = require('./equals.js');
 var PkgName = require('./pkg-name.js');
 
 function Symbol(name, pkgName) {
+  if (!name || name === '' || name.indexOf('.') !== -1) {
+    throw new Error('Invalid name: ' + name);
+  }
+
   this.name = name;
   this.pkgName = pkgName;
 }

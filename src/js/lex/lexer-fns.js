@@ -58,10 +58,7 @@ exports.lexName = function lexName(lexer) {
 
     if (first) {
       if (character.isDigit(c)) {
-        return lexer.error('Names must not begin with a digit');
-      }
-      if (character.isHyphen(c)) {
-        return lexer.error('Names must not begin with a hyphen');
+        return lexer.error('Illegal starting character: ' + c);
       }
     }
 
@@ -83,8 +80,6 @@ exports.lexName = function lexName(lexer) {
         return exports.lexWhitespace;
       } else if (enclosing.hasOwnProperty(c)) {
         return exports.lexEnclosing;
-      } else if (singles.hasOwnProperty(c)) {
-        return exports.lexSingle;
       } else if (character.isQuote(c)) {
         return exports.lexStringStart;
       } else if (character.isSemicolon(c)) {
@@ -127,30 +122,6 @@ exports.lexKeyword = function lexKeyword(lexer) {
     }
 
     first = false;
-  }
-};
-
-var singles = {
-  '.': Token.DOT,
-  '-': Token.HYPHEN,
-  '/': Token.SLASH
-};
-
-exports.lexSingle = function lexSingle(lexer) {
-  while (true) {
-    var c = lexer.read();
-
-    // EOF
-    if (c === null) {
-      return lexer.eof();
-    }
-
-    if (singles.hasOwnProperty(c)) {
-      lexer.emit(singles[c]);
-    } else {
-      lexer.backup();
-      return exports.lexWhitespace;
-    }
   }
 };
 

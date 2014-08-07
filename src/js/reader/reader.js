@@ -41,115 +41,33 @@ function symbolOrLiteral(text) {
 }
 
 function readSymbol(reader) {
-  var segments = [];
-  var last;
-  var slash;
-  var hasReadName = false;
-  var isMethod = false;
-  var isProperty = false;
+  var token = readOne(reader, Token.NAME);
 
-  while (true) {
-    var token = reader.scanner.next();
-
-    if (token.type === Token.NAME) {
-
-      // Symbols cannot follow symbols.
-      if (last && last.type === Token.NAME) {
-        return reader.unexpectedToken(token);
-      }
-
-      // A token after a slash is the name.
-      if (slash) {
-
-        // Unless we've already read the name.
-        if (hasReadName) {
-          return reader.unexpectedToken(token);
-        }
-
-        hasReadName = true;
-      }
-
-      segments.push(token.text);
-
-    } else if (token.type === Token.SLASH) {
-
-      // A slash can only occur after a symbol.
-      if (last && last.type !== Token.NAME) {
-        return reader.unexpectedToken(token);
-      }
-
-      // Multiple slashes or a slash after the name is not ok.
-      if (slash || hasReadName) {
-        return reader.unexpectedToken(token);
-      }
-
-      // A slash in a method name is not ok.
-      if (isMethod) {
-        return reader.unexpectedToken(token);
-      }
-
-      slash = token;
-
-    } else if (token.type === Token.DOT) {
-
-      // If the first character is a dot it starts a method name.
-      if (!isMethod && !last) {
-        isMethod = true;
-      }
-
-      // Dots can only occur after a symbol.
-      if (!isMethod && last && last.type !== Token.NAME) {
-        return reader.unexpectedToken(token);
-      }
-
-      // Dots after a slash and name is not ok.
-      if (slash || hasReadName) {
-        return reader.unexpectedToken(token);
-      }
-
-    } else if (token.type === Token.HYPHEN) {
-
-      if (isMethod && last && last.type === Token.DOT) {
-        isMethod = false;
-        isProperty = true;
-      } else {
-        return reader.unexpectedToken(token);
-      }
-
-    } else {
-      // Backup and try to read the segments as a symbol.
-      reader.scanner.backup();
-      break;
-    }
-    last = token;
+  if (token === null) {
+    return reader.eof();
   }
 
-  switch (segments.length) {
-    case 0:
-      throw new Error('No symbol tokens read')
-    case 1:
-      if (slash) {
-        return reader.unexpectedToken(slash);
-      } else if (isProperty) {
-        return new PropertyName(segments[0]);
-      } else if (isMethod) {
-        return new MethodName(segments[0]);
-      }
-      return symbolOrLiteral(segments[0]);
-    default:
-      if (slash) {
-        if (!hasReadName) {
-          return reader.missing(Token.NAME, slash.position.plus(0, 1))
-        }
-        var last = segments.length - 1;
-        var name = new PkgName(segments.slice(0, last));
-        return Symbol.inPkg(segments[last], name);
-      }
-      return new PkgName(segments);
+  var splitBySlash = token.text.split('/');
+
+  if (token.text === '/') {
+    return Symbol.withoutPkg('/');
+  } else if (splitBySlash.length === 1) {
+    if (token.text.indexOf('.-') === 0) {
+      return new PropertyName(token.text.slice(2));
+    } else if (token.text.indexOf('.') === 0) {
+      return new MethodName(token.text.slice(1));
+    }
+    var splitByDot = token.text.split('.');
+    if (splitByDot.length === 1) {
+      return symbolOrLiteral(token.text);
+    } else {
+      return new PkgName(splitByDot);
+    }
+  } else if (splitBySlash.length === 2) {
+    var pkgName = new PkgName.fromString(splitBySlash[0]);
+    return Symbol.inPkg(splitBySlash[1], pkgName);
   }
 }
-readerFns[Token.DOT] = readSymbol;
-readerFns[Token.HYPHEN] = readSymbol;
 readerFns[Token.NAME] = readSymbol;
 
 function makeReadEnclosed(before, after, construct) {

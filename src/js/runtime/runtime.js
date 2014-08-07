@@ -19,10 +19,23 @@ function Runtime(base) {
 }
 
 Runtime.prototype.addPreDefs = function () {
+  var self = this;
+  function wrapCore(name, f) {
+    return self.def(Symbol.inPkg(name, zapCore), new WrappedFn(f));
+  }
   return Promise.all([
-    this.def(Symbol.inPkg('add', zapCore), new WrappedFn(function (a, b) {
+    wrapCore('+', function (a, b) {
       return a + b;
-    })),
+    }),
+    wrapCore('-', function (a, b) {
+      return a - b;
+    }),
+    wrapCore('*', function (a, b) {
+      return a * b;
+    }),
+    wrapCore('/', function (a, b) {
+      return a / b;
+    }),
     this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
       return http.get(url).then(function (result) {
         return result.data;

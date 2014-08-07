@@ -49,7 +49,6 @@ describe('lex', function () {
 
         var s = lexer.next();
         expect(s.type).to.equal(Token.ERROR);
-        expect(s.text).to.contain('Names must not begin with a digit');
       });
 
       it('allows ASCII alphanumeric characters', function () {
@@ -114,12 +113,27 @@ describe('lex', function () {
         var text = '.toString';
         var lexer = new Lexer(text);
 
-        var d = lexer.next();
-        expect(d.type).to.equal(Token.DOT);
+        var s = lexer.next();
+        expect(s.type).to.equal(Token.NAME);
+        expect(s.text).to.equal('.toString');
+      });
+
+      it('allows a dot and a hyphen for property access', function () {
+        var text = '.-length';
+        var lexer = new Lexer(text);
 
         var s = lexer.next();
         expect(s.type).to.equal(Token.NAME);
-        expect(s.text).to.equal('toString');
+        expect(s.text).to.equal('.-length');
+      });
+
+      it('allows math function characters', function () {
+        var text = '/*-+';
+        var lexer = new Lexer(text);
+
+        var s = lexer.next();
+        expect(s.type).to.equal(Token.NAME);
+        expect(s.text).to.equal('/*-+');
       });
 
     });
@@ -239,20 +253,6 @@ describe('lex', function () {
         var s = lexer.next();
         expect(s.type).to.equal(Token.KEYWORD);
         expect(s.text).to.equal(':a?');
-      });
-
-    });
-
-    describe('lexSingle', function () {
-
-      it('emits one token per character', function () {
-        var text = './/.';
-        var lexer = new Lexer(text);
-
-        expect(lexer.next().type).to.equal(Token.DOT);
-        expect(lexer.next().type).to.equal(Token.SLASH);
-        expect(lexer.next().type).to.equal(Token.SLASH);
-        expect(lexer.next().type).to.equal(Token.DOT);
       });
 
     });

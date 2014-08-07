@@ -16,11 +16,14 @@ var character = {
   },
   isValidNameCharacter: function (c) {
     return character.isAlphaNumeric(c) ||
-      c == '-' ||
       c == '_' ||
+      c == '.' ||
+      c == '+' ||
+      c == '-' ||
+      c == '*' ||
+      c == '/' ||
       c == '?' ||
-      c == '!' ||
-      c == '*';
+      c == '!';
   },
   isColon: function (c) {
     return c === ':';

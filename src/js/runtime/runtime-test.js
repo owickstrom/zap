@@ -31,7 +31,7 @@ describe('runtime', function () {
     it('requires pkgs', function () {
       var core = PkgName.withSegments('zap', 'core');
       return rt.require(core).then(function (required) {
-        return rt.resolve(Symbol.inPkg('add', core)).then(function (addVar) {
+        return rt.resolve(Symbol.inPkg('+', core)).then(function (addVar) {
           expect(addVar.deref().apply(mori.list(1, 2))).to.equal(3);
         });
       });
@@ -180,6 +180,42 @@ describe('runtime', function () {
     });
 
     it('creates macros with macro');
+
+    it('adds', function () {
+      var symbol = Symbol.withoutPkg('some-number');
+      return rt.def(symbol, 4).then(function () {
+        return rt.loadString('(+ some-number some-number)').then(function (s) {
+          expect(s).to.equal(8);
+        });
+      });
+    });
+
+    it('subtracts', function () {
+      var symbol = Symbol.withoutPkg('some-number');
+      return rt.def(symbol, 5345).then(function () {
+        return rt.loadString('(- some-number some-number)').then(function (s) {
+          expect(s).to.equal(0);
+        });
+      });
+    });
+
+    it('multiplies', function () {
+      var symbol = Symbol.withoutPkg('some-number');
+      return rt.def(symbol, 3).then(function () {
+        return rt.loadString('(* some-number some-number)').then(function (s) {
+          expect(s).to.equal(9);
+        });
+      });
+    });
+
+    it('divides', function () {
+      var symbol = Symbol.withoutPkg('some-number');
+      return rt.def(symbol, 4).then(function () {
+        return rt.loadString('(/ some-number some-number)').then(function (s) {
+          expect(s).to.equal(1);
+        });
+      });
+    });
 
   });
 });
