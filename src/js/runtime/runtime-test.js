@@ -223,6 +223,12 @@ describe('runtime', function () {
       });
     });
 
+    it('does equals on vectors', function () {
+      return rt.loadString('(= [:a] [:a])').then(function (r) {
+        expect(r).to.equal(true);
+      });
+    });
+
     it('does equals on stuff that is not equal', function () {
       return rt.loadString('(= :a :b)').then(function (r) {
         expect(r).to.equal(false);

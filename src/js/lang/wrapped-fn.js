@@ -8,8 +8,13 @@ WrappedFn.prototype.toString = function () {
   return 'Wrapped: ' + this._f.toString();
 }
 
+function append(arr, element) {
+  return arr.concat([element]);
+}
+
 WrappedFn.prototype.apply = function (seq) {
-  return this._f.apply(null, mori.clj_to_js(seq));
+  var args = mori.reduce(append, [], seq);
+  return this._f.apply(null, args);
 };
 
 module.exports = WrappedFn;

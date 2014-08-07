@@ -145,7 +145,11 @@ Scope.prototype.eval = function (form) {
       });
 
     } else if (mori.is_vector(form)) {
-      return mori.into(mori.vector(), mori.map(eval, form));
+      var promises = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
+      var promise = Promise.all(promises).then(function (elements) {
+        return mori.vector.apply(null, elements);
+      });
+      return resolve(promise);
     } else if (mori.is_map(form)) {
       return resolve(evalMap(self, form));
     } else if (Symbol.isInstance(form)) {
