@@ -110,6 +110,18 @@ describe('lex', function () {
         expect(s.text).to.equal('a?');
       });
 
+      it('allows a dot for method names', function () {
+        var text = '.toString';
+        var lexer = new Lexer(text);
+
+        var d = lexer.next();
+        expect(d.type).to.equal(Token.DOT);
+
+        var s = lexer.next();
+        expect(s.type).to.equal(Token.NAME);
+        expect(s.text).to.equal('toString');
+      });
+
     });
 
     describe('lexEnclosing', function () {

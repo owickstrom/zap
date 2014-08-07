@@ -116,6 +116,18 @@ describe('runtime', function () {
       });
     });
 
+    it('calls methods without arguments on Javascript objects', function () {
+      return rt.loadString('(.toUpperCase "hello")').then(function (s) {
+        expect(s).to.equal("HELLO");
+      });
+    });
+
+    it('calls methods with arguments on Javascript objects', function () {
+      return rt.loadString('(.indexOf "hello" "h")').then(function (index) {
+        expect(index).to.equal(0);
+      });
+    });
+
     it('lets local bindings', function () {
       return rt.loadString('(let [a :a] a)').then(function (keyword) {
         expect(equals(keyword, new Keyword(':a'))).to.be.true;

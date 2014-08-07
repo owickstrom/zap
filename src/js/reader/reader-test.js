@@ -117,5 +117,11 @@ describe('reader', function () {
       expect(function () { Reader.readString('pkg./name'); }).throws();
     });
 
+    it('returns a method if a single name starts with a dot', function () {
+      var methodName = Reader.readString('.toString');
+      expect(methodName.toString()).to.equal('.toString');
+      expect(methodName.name).to.equal('toString');
+    });
+
   });
 })

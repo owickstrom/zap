@@ -4,6 +4,7 @@ var TokenScanner = require('./token-scanner.js');
 var Symbol = require('../lang/symbol.js');
 var Keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
+var MethodName = require('../lang/method-name.js');
 var m = require('mori');
 
 var readerFns = {};
@@ -43,6 +44,7 @@ function readSymbol(reader) {
   var last;
   var slash;
   var hasReadName = false;
+  var isMethod = false;
 
   while (true) {
     var token = reader.scanner.next();
@@ -79,12 +81,22 @@ function readSymbol(reader) {
         return reader.unexpectedToken(token);
       }
 
+      // A slash in a method name is not ok.
+      if (isMethod) {
+        return reader.unexpectedToken(token);
+      }
+
       slash = token;
 
     } else if (token.type === Token.DOT) {
 
+      // If the first character is a dot it starts a method name.
+      if (!isMethod && !last) {
+        isMethod = true;
+      }
+
       // Dots can only occur after a symbol.
-      if (last && last.type !== Token.NAME) {
+      if (!isMethod && last && last.type !== Token.NAME) {
         return reader.unexpectedToken(token);
       }
 
@@ -107,6 +119,8 @@ function readSymbol(reader) {
     case 1:
       if (slash) {
         return reader.unexpectedToken(slash);
+      } else if (isMethod) {
+        return MethodName.fromStringWithDot(segments[0]);
       }
       return symbolOrLiteral(segments[0]);
     default:
@@ -121,6 +135,7 @@ function readSymbol(reader) {
       return new PkgName(segments);
   }
 }
+readerFns[Token.DOT] = readSymbol;
 readerFns[Token.NAME] = readSymbol;
 
 function makeReadEnclosed(before, after, construct) {

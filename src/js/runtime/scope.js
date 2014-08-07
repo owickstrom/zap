@@ -3,6 +3,8 @@ var equals = require('../lang/equals.js');
 var Symbol = require('../lang/symbol.js');
 var Closure = require('./closure.js');
 var SpecialForms = require('./special-forms.js');
+var MethodName = require('../lang/method-name.js');
+var MethodCall = require('./method-call.js');
 
 var specialForms = new SpecialForms();
 
@@ -144,27 +146,25 @@ Scope.prototype.eval = function (form) {
       return mori.into(mori.vector(), mori.map(eval, form));
     } else if (mori.is_map(form)) {
       return resolve(evalMap(self, form));
-    } else {
-
+    } else if (Symbol.isInstance(form)) {
       // Symbols are automatically derefed.
-      if (Symbol.isInstance(form)) {
-        var bound = self.resolve(form);
+      var bound = self.resolve(form);
 
-        if (bound) {
-          return resolve(bound);
-        }
-
-        self.runtime.resolve(form).then(function (v) {
-          if (v) {
-            return resolve(v.deref());
-          } else {
-            return reject(new Error('Could not resolve symbol: ' + form.toString()));
-          }
-        });
-
-      } else {
-        return resolve(form);
+      if (bound) {
+        return resolve(bound);
       }
+
+      self.runtime.resolve(form).then(function (v) {
+        if (v) {
+          return resolve(v.deref());
+        } else {
+          return reject(new Error('Could not resolve symbol: ' + form.toString()));
+        }
+      });
+    } else if (MethodName.isInstance(form)) {
+      return resolve(new MethodCall(form));
+    } else {
+      return resolve(form);
     }
   });
 };
