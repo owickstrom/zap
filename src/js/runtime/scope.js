@@ -51,6 +51,40 @@ specialForms.add('fn', function (scope, args) {
   return new Closure(scope, args);
 });
 
+// if does what you'd expect.
+specialForms.add('if', function (scope, args) {
+  var count = mori.count(args);
+
+  return new Promise(function (resolve, reject) {
+
+    if (count < 2) {
+      return reject(new Error('Cannot if without a condition and a true branch'));
+    }
+
+    var condition = scope.eval(mori.first(args));
+
+    condition.then(function (c) {
+      var exceptCondition = mori.rest(args);
+      var trueBranch = mori.first(exceptCondition);
+      var falseBranch;
+
+      if (count >= 3) {
+        falseBranch = mori.first(mori.rest(exceptCondition));
+      }
+
+      var conditionFalse = c === false || (mori.is_list(c) && mori.equals(mori.list(), c));
+
+      if (!conditionFalse) {
+        return resolve(scope.eval(trueBranch));
+      } else if (falseBranch !== undefined) {
+        return resolve(scope.eval(falseBranch));
+      } else {
+        return resolve(null);
+      }
+    });
+  });
+});
+
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
   this._values = values;
