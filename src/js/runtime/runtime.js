@@ -6,8 +6,10 @@ var Pkg = require('../lang/pkg.js');
 var PkgName = require('../lang/pkg-name.js');
 var WrappedFn = require('../lang/wrapped-fn.js');
 var Loader = require('./loader.js');
+var http = require('../net/http.js');
 
 var zapCore = PkgName.withSegments('zap', 'core');
+var zapHttp = PkgName.withSegments('zap', 'http');
 
 function Runtime(base) {
   this.rootScope = new Scope(this);
@@ -20,6 +22,11 @@ Runtime.prototype.addPreDefs = function () {
   return Promise.all([
     this.def(Symbol.inPkg('add', zapCore), new WrappedFn(function (a, b) {
       return a + b;
+    })),
+    this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
+      return http.get(url).then(function (result) {
+        return result.data;
+      });
     }))
   ]);
 };
