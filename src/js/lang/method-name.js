@@ -18,14 +18,4 @@ MethodName.prototype.equals = function (other) {
   return this.name == other.name;
 };
 
-MethodName.fromStringWithDot = function (s) {
-  if (!s || s.length === 0) {
-    throw new Error('Invalid method name: ' + s);
-  }
-  if (s[0] === '.') {
-    s = s.slice(1);
-  }
-  return new MethodName(s);
-};
-
 module.exports = MethodName;

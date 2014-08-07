@@ -116,6 +116,12 @@ describe('runtime', function () {
       });
     });
 
+    it('returns properties from Javascript objects', function () {
+      return rt.loadString('(.-length "hello")').then(function (l) {
+        expect(l).to.equal(5);
+      });
+    });
+
     it('calls methods without arguments on Javascript objects', function () {
       return rt.loadString('(.toUpperCase "hello")').then(function (s) {
         expect(s).to.equal("HELLO");

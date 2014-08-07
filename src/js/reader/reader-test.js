@@ -117,10 +117,16 @@ describe('reader', function () {
       expect(function () { Reader.readString('pkg./name'); }).throws();
     });
 
-    it('returns a method if a single name starts with a dot', function () {
+    it('returns a method name if a single name starts with a dot', function () {
       var methodName = Reader.readString('.toString');
       expect(methodName.toString()).to.equal('.toString');
       expect(methodName.name).to.equal('toString');
+    });
+
+    it('returns a property name if a single name starts with a dot and hyphen', function () {
+      var methodName = Reader.readString('.-length');
+      expect(methodName.toString()).to.equal('.-length');
+      expect(methodName.name).to.equal('length');
     });
 
   });

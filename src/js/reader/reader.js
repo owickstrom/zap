@@ -5,6 +5,7 @@ var Symbol = require('../lang/symbol.js');
 var Keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
 var MethodName = require('../lang/method-name.js');
+var PropertyName = require('../lang/property-name.js');
 var m = require('mori');
 
 var readerFns = {};
@@ -45,6 +46,7 @@ function readSymbol(reader) {
   var slash;
   var hasReadName = false;
   var isMethod = false;
+  var isProperty = false;
 
   while (true) {
     var token = reader.scanner.next();
@@ -105,6 +107,15 @@ function readSymbol(reader) {
         return reader.unexpectedToken(token);
       }
 
+    } else if (token.type === Token.HYPHEN) {
+
+      if (isMethod && last && last.type === Token.DOT) {
+        isMethod = false;
+        isProperty = true;
+      } else {
+        return reader.unexpectedToken(token);
+      }
+
     } else {
       // Backup and try to read the segments as a symbol.
       reader.scanner.backup();
@@ -119,8 +130,10 @@ function readSymbol(reader) {
     case 1:
       if (slash) {
         return reader.unexpectedToken(slash);
+      } else if (isProperty) {
+        return new PropertyName(segments[0]);
       } else if (isMethod) {
-        return MethodName.fromStringWithDot(segments[0]);
+        return new MethodName(segments[0]);
       }
       return symbolOrLiteral(segments[0]);
     default:
@@ -136,6 +149,7 @@ function readSymbol(reader) {
   }
 }
 readerFns[Token.DOT] = readSymbol;
+readerFns[Token.HYPHEN] = readSymbol;
 readerFns[Token.NAME] = readSymbol;
 
 function makeReadEnclosed(before, after, construct) {

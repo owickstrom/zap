@@ -56,8 +56,13 @@ exports.lexName = function lexName(lexer) {
   while (true) {
     var c = lexer.read();
 
-    if (first && character.isDigit(c)) {
-      return lexer.error('Names must not begin with a digit');
+    if (first) {
+      if (character.isDigit(c)) {
+        return lexer.error('Names must not begin with a digit');
+      }
+      if (character.isHyphen(c)) {
+        return lexer.error('Names must not begin with a hyphen');
+      }
     }
 
     if (!character.isValidNameCharacter(c)) {
@@ -127,6 +132,7 @@ exports.lexKeyword = function lexKeyword(lexer) {
 
 var singles = {
   '.': Token.DOT,
+  '-': Token.HYPHEN,
   '/': Token.SLASH
 };
 

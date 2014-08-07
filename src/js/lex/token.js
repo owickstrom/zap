@@ -10,6 +10,7 @@ Token.NAME = "Name";
 Token.KEYWORD = "Keyword";
 
 Token.DOT = "Dot";
+Token.HYPHEN = "Hyphen";
 Token.SLASH = "Slash";
 
 Token.COMMENT_START = "CommentStart";

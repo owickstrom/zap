@@ -8,6 +8,9 @@ var character = {
   isDigit: function (c) {
     return /^\d$/.test(c);
   },
+  isHyphen: function (c) {
+    return c === '-';
+  },
   isAlphaNumeric: function (c) {
     return /^\w$/.test(c);
   },

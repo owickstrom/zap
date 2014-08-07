@@ -5,6 +5,8 @@ var Closure = require('./closure.js');
 var SpecialForms = require('./special-forms.js');
 var MethodName = require('../lang/method-name.js');
 var MethodCall = require('./method-call.js');
+var PropertyName = require('../lang/property-name.js');
+var PropertyGetter = require('./property-getter.js');
 
 var specialForms = new SpecialForms();
 
@@ -163,6 +165,8 @@ Scope.prototype.eval = function (form) {
       });
     } else if (MethodName.isInstance(form)) {
       return resolve(new MethodCall(form));
+    } else if (PropertyName.isInstance(form)) {
+      return resolve(new PropertyGetter(form));
     } else {
       return resolve(form);
     }
