@@ -1,0 +1,36 @@
+html, body {
+  height: 100%;
+  font-family: sans-serif;
+  background: #222;
+}
+
+body {
+  margin: 0;
+}
+
+h1 {
+  margin: 0 0 .5em;
+  padding: .5em 1em;
+  background: #333;
+  font-size: 100%;
+  color: #ccc;
+  text-align: center;
+  font-weight: 400;
+}
+
+.message, .error {
+  font-style: italic;
+}
+
+.message {
+  color: #888 !important;
+}
+
+.error {
+  color: #f43 !important;
+}
+
+.cm-s-tomorrow-night-eighties .CodeMirror-gutters,
+.cm-s-tomorrow-night-eighties.CodeMirror {
+  background: #222;
+}

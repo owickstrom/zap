@@ -147,7 +147,7 @@ describe('runtime', function () {
     });
 
     it('evals vectors of local bindings', function () {
-      rt.loadString('(let [a :a b :b] [a b])').then(function (vector) {
+      return rt.loadString('(let [a :a b :b] [a b])').then(function (vector) {
         var expected = mori.vector(new Keyword(':a'), new Keyword(':b'));
         expect(equals(vector, expected)).to.be.true;
       });
@@ -261,19 +261,19 @@ describe('runtime', function () {
 
     describe('if', function () {
 
-      it.only('returns the first expression if true', function () {
+      it('returns the first expression if true', function () {
         return rt.loadString('(if true "a" "b")').then(function (r) {
           expect(r).to.equal('a');
         });
       });
 
-      it.only('returns the second expression if false', function () {
+      it('returns the second expression if false', function () {
         return rt.loadString('(if false "a" "b")').then(function (r) {
           expect(r).to.equal('b');
         });
       });
 
-      it.only('returns nil if false and no second expression', function () {
+      it('returns nil if false and no second expression', function () {
         return rt.loadString('(if false "a")').then(function (r) {
           expect(r).to.equal(null);
         });

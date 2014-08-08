@@ -55,6 +55,9 @@ Runtime.prototype.addPreDefs = function () {
     wrapCore('>=', function (a, b) {
       return a >= b;
     }),
+    wrapCore('type-of', function (a) {
+      return typeof a;
+    }),
     this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
       return http.get(url).then(function (result) {
         return result.data;

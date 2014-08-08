@@ -175,15 +175,16 @@ Scope.prototype.eval = function (form) {
         var argPromises = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
         Promise.all(argPromises).then(function (args) {
           return resolve(fn.apply(mori.seq(args)));
-        });
-      });
+        }, reject);
+      }, reject);
 
     } else if (mori.is_vector(form)) {
-      var promises = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
-      var promise = Promise.all(promises).then(function (elements) {
+
+      var promises = mori.clj_to_js(mori.map(eval, form));
+      return Promise.all(promises).then(function (elements) {
         return mori.vector.apply(null, elements);
-      });
-      return resolve(promise);
+      }, reject).then(resolve, reject);
+
     } else if (mori.is_map(form)) {
       return resolve(evalMap(self, form));
     } else if (Symbol.isInstance(form)) {
@@ -200,7 +201,7 @@ Scope.prototype.eval = function (form) {
         } else {
           return reject(new Error('Could not resolve symbol: ' + form.toString()));
         }
-      });
+      }, reject);
     } else if (MethodName.isInstance(form)) {
       return resolve(new MethodCall(form));
     } else if (PropertyName.isInstance(form)) {

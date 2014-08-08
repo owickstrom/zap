@@ -6,8 +6,8 @@
 
 (def constructor-name (fn [s] (.-name (.-constructor s))))
 
-(def string? [v] (= (constructor-name v) "String"))
+(def string? (fn [v] (= (type-of v) "string")))
 
-(def to-string [v] (if (string? v) v (+ "" v)))
+(def to-string (fn [v] (if (string? v) v (+ "" v))))
 
 (def str (fn [a b] (+ (to-string a) (to-string b))))
