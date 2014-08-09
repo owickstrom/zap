@@ -1,10 +1,13 @@
 var mori = require('mori');
+var printString = require('../lang/print-string.js');
 
 function PkgName(segments) {
   this.segments = mori.seq(segments);
 
   if (!validateSegments(this.segments)) {
-    throw new Error('Invalid pkg name segments: ' + this.segments.toString());
+    throw new Error(
+      'Invalid pkg name segments: ' +
+      printString(this.segments));
   }
 }
 

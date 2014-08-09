@@ -1,5 +1,6 @@
 var mori = require('mori');
 var equals = require('../lang/equals.js');
+var printString = require('../lang/print-string.js');
 var Symbol = require('../lang/symbol.js');
 var Closure = require('./closure.js');
 var SpecialForms = require('./special-forms.js');
@@ -110,7 +111,7 @@ Scope.create = function (bindings, subScope, evalArgs) {
   var value = mori.first(rest);
 
   if (!Symbol.isInstance(symbol)) {
-    throw new Error(symbol.toString() + ' is not a symbol');
+    throw new Error(printString(symbol) + ' is not a symbol');
   }
 
   var key = symbol.name;
@@ -199,7 +200,7 @@ Scope.prototype.eval = function (form) {
         if (v) {
           return resolve(v.deref());
         } else {
-          return reject(new Error('Could not resolve symbol: ' + form.toString()));
+          return reject(new Error('Could not resolve symbol: ' + printString(form)));
         }
       }, reject);
     } else if (MethodName.isInstance(form)) {

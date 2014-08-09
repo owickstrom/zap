@@ -1,4 +1,5 @@
 var m = require('mori');
+var printString = require('../lang/print-string.js');
 
 function Closure(scope, expressions) {
   this._scope = scope;
@@ -22,7 +23,7 @@ Closure.prototype.apply = function (params) {
 };
 
 Closure.prototype.toString = function () {
-  return '(fn ' + this._args + ' ' + this._body + ')';
+  return '(fn ' + printString(this._args) + ' ' + printString(this._body) + ')';
 };
 
 module.exports = Closure;

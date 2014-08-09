@@ -1,16 +1,17 @@
 var mori = require('mori');
+var printString = require('../lang/print-string.js');
 
 function MethodCall(methodName) {
   this.methodName = methodName;
 }
 
 MethodCall.prototype.toString = function () {
-  return '(' + this.methodName.toString() + ' ...)';
+  return '(' + printString(this.methodName) + ' ...)';
 };
 
 MethodCall.prototype.apply = function (seq) {
   if (mori.count(seq) === 0) {
-    throw new Error('Cannot call ' + this.methodName.toString() + ' on nothing');
+    throw new Error('Cannot call ' + printString(this.methodName) + ' on nothing');
   }
 
   var target = mori.first(seq);
