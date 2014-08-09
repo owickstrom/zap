@@ -19,6 +19,9 @@ function printSingle(arg) {
   } else if (mori.is_vector(arg)) {
     return seqToString(arg, '[', ']');
   } else if (mori.is_map(arg)) {
+    if (mori.is_empty(arg)) {
+      return '{}';
+    }
     var kvs = mori.flatten(mori.seq(arg));
     return seqToString(kvs, '{', '}');
   } else {

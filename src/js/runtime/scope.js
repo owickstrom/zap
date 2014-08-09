@@ -43,8 +43,9 @@ specialForms.add('let', function (scope, args) {
   // TODO: Support implicit do.
   var body = mori.first(mori.rest(args));
 
-  var newScope = Scope.create(bindings, scope, true);
-  return newScope.eval(body);
+  return Scope.create(bindings, scope, true).then(function (newScope) {
+    return newScope.eval(body);
+  });
 });
 //
 // fn creates a closure.
@@ -90,7 +91,6 @@ function Scope(runtime, values, subScope) {
   this.runtime = runtime;
   this._values = values;
   this._subScope = subScope;
-
 }
 
 Scope.prototype.wrap = function (bindings, evalArgs) {
@@ -98,34 +98,41 @@ Scope.prototype.wrap = function (bindings, evalArgs) {
 };
 
 Scope.create = function (bindings, subScope, evalArgs) {
-  var count = mori.count(bindings);
+  return new Promise(function (resolve, reject) {
+    var count = mori.count(bindings);
 
-  if (count == 0) {
-    return subScope;
-  } else if (count % 2 !== 0) {
-    throw new Error('Scope.create requires a bindings vector with even length');
-  }
+    if (count == 0) {
+      return resolve(subScope);
+    } else if (count % 2 !== 0) {
+      return reject(new Error('Scope.create requires a bindings vector with even length'));
+    }
 
-  var symbol = mori.first(bindings);
-  var rest = mori.rest(bindings);
-  var value = mori.first(rest);
+    var symbol = mori.first(bindings);
+    var rest = mori.rest(bindings);
+    var value = mori.first(rest);
 
-  if (!Symbol.isInstance(symbol)) {
-    throw new Error(printString(symbol) + ' is not a symbol');
-  }
+    if (!Symbol.isInstance(symbol)) {
+      return reject(new Error(printString(symbol) + ' is not a symbol'));
+    }
 
-  var key = symbol.name;
+    var key = symbol.name;
 
-  if (evalArgs) {
-    value = subScope.eval(value);
-  }
+    var valuePromise;
+    if (evalArgs) {
+      valuePromise = subScope.eval(value);
+    } else {
+      valuePromise = Promise.resolve(value);
+    }
 
-  var values = mori.hash_map(key, value);
+    valuePromise.then(function (value) {
+      var values = mori.hash_map(key, value);
 
-  return Scope.create(
-    mori.rest(rest),
-    new Scope(subScope.runtime, values, subScope),
-    evalArgs);
+       Scope.create(
+        mori.rest(rest),
+        new Scope(subScope.runtime, values, subScope),
+        evalArgs).then(resolve, reject);
+    }, reject);
+  });
 }
 
 Scope.empty = function (runtime) {
@@ -173,17 +180,24 @@ Scope.prototype.eval = function (form) {
       // TODO: macro call
 
       self.eval(first).then(function (fn) {
-        var argPromises = mori.clj_to_js(mori.map(eval, mori.rest(seq)));
+        var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
         Promise.all(argPromises).then(function (args) {
+          if (!fn.apply) {
+            return reject(printString(fn) + ' is not a fn');
+          }
+          //console.log(printString(fn, args, mori.first(args).__meta));
           return resolve(fn.apply(mori.seq(args)));
         }, reject);
       }, reject);
 
     } else if (mori.is_vector(form)) {
-
       var promises = mori.clj_to_js(mori.map(eval, form));
+
       return Promise.all(promises).then(function (elements) {
-        return mori.vector.apply(null, elements);
+        var newVector = mori.vector.apply(null, elements);
+        // Transfer meta data.
+        newVector.__meta = form.__meta;
+        return newVector;
       }, reject).then(resolve, reject);
 
     } else if (mori.is_map(form)) {

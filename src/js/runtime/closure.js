@@ -17,9 +17,12 @@ function createBindings(args, params) {
 }
 
 Closure.prototype.apply = function (params) {
+  var self = this;
   var bindings = createBindings(this._args, params);
-  var scope = this._scope.wrap(bindings, true);
-  return scope.eval(this._body);
+
+  return self._scope.wrap(bindings, true).then(function (scope) {
+    return scope.eval(self._body);
+  });
 };
 
 Closure.prototype.toString = function () {

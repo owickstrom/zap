@@ -1,6 +1,7 @@
 var mori = require('mori');
 var Runtime = require('./runtime.js');
 var equals = require('../lang/equals.js');
+var printString = require('../lang/print-string.js');
 var Symbol = require('../lang/symbol.js');
 var Keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
@@ -122,6 +123,29 @@ describe('runtime', function () {
       });
     });
 
+    it('returns properties from Javascript objects in fns', function () {
+      return rt.loadString('(fn [v] (.-__meta v))').then(function (meta) {
+        return rt.loadString('(with-meta {:doc "hej"} [:yo])').then(function (yo) {
+          return meta.apply(mori.list(yo)).then(function (r) {
+            //console.log(printString(yo.meta, meta, r));
+            expect(mori.is_map(r)).to.be.true;
+          });
+        });
+      });
+    });
+
+    it('returns underscored properties from Javascript objects in fns', function () {
+      var symbol = Symbol.withoutPkg('value');
+      var value = {
+        __prop: 1
+      };
+      return rt.def(symbol, value).then(function () {
+        return rt.loadString('((fn [v] (.-__prop v)) value)').then(function (v) {
+          expect(v).to.equal(1);
+        });
+      });
+    });
+
     it('calls methods without arguments on Javascript objects', function () {
       return rt.loadString('(.toUpperCase "hello")').then(function (s) {
         expect(s).to.equal("HELLO");
@@ -172,14 +196,14 @@ describe('runtime', function () {
         });
     });
 
+    it('creates macros with macro');
+
     it('chains returned promises from functions', function () {
       return rt.loadString('(let [response (zap.http/get "/base/src/zap/zap/core.zap")' +
                                   'prefixed (str "!" response)] prefixed)').then(function (string) {
         expect(string.slice(0, 5)).to.equal('!(def');
       });
     });
-
-    it('creates macros with macro');
 
     it('adds', function () {
       var symbol = Symbol.withoutPkg('some-number');
@@ -292,6 +316,22 @@ describe('runtime', function () {
     it('prints lists of keywords', function () {
       return rt.loadString('(print-string (quote (:hello :world)))').then(function (r) {
         expect(r).to.equal('(:hello :world)');
+      });
+    });
+
+    it('adds metadata to collections', function () {
+      return rt.loadString('(with-meta {:doc "Stuff"} [:my :stuff])').then(function (stuff) {
+        var expected = mori.hash_map(new Keyword(':doc'), 'Stuff');
+        expect(equals(stuff.__meta, expected)).to.be.true;
+      });
+    });
+
+    it('retrieves metadata added to collections', function () {
+      return rt.loadString('(def stuff (with-meta {:doc "Stuff"} [:my :stuff]))').then(function () {
+        return rt.loadString('(meta stuff)').then(function (meta) {
+          var expected = mori.hash_map(new Keyword(':doc'), 'Stuff');
+          expect(equals(meta, expected)).to.be.true;
+        });
       });
     });
 

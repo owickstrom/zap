@@ -11,3 +11,5 @@
 (def to-string (fn [v] (if (string? v) v (+ "" v))))
 
 (def str (fn [a b] (+ (to-string a) (to-string b))))
+
+(def meta (fn [v] (.-__meta v)))

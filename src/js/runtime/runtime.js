@@ -14,7 +14,7 @@ var zapCore = PkgName.withSegments('zap', 'core');
 var zapHttp = PkgName.withSegments('zap', 'http');
 
 function Runtime(base) {
-  this.rootScope = new Scope(this);
+  this.rootScope = new Scope(this, mori.hash_map(), null);
   this.pkgs = mori.hash_map();
   this.pkg = this.getPkg(zapCore);
   this._loader = new Loader(base);
@@ -61,6 +61,23 @@ Runtime.prototype.addPreDefs = function () {
     }),
     wrapCore('print-string', function () {
       return printString.apply(null, arguments);
+    }),
+    wrapCore('with-meta', function (meta, coll) {
+      if (mori.is_collection(coll)) {
+        var result;
+        if (mori.is_list(coll)) {
+          result = mori.list();
+        } else if (mori.is_vector(coll)) {
+          result = mori.vector();
+        } else if (mori.is_map(coll)) {
+          result = mori.hash_map();
+        }
+        var copy = mori.into(result, coll);
+        copy.__meta = meta;
+        return Promise.resolve(copy);
+      } else {
+        return Promise.reject(printString(coll) + ' does not support metadata');
+      }
     }),
     this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
       return http.get(url).then(function (result) {

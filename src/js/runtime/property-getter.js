@@ -10,11 +10,15 @@ PropertyGetter.prototype.toString = function () {
 
 PropertyGetter.prototype.apply = function (seq) {
   if (mori.count(seq) === 0) {
-    throw new Error('Cannot get property ' + this.propertyName.name + ' on nothing');
+    Promise.reject(new Error('Cannot get property ' + this.propertyName.name + ' on nothing'));
   }
 
-  var target = mori.first(seq);
-  return target[this.propertyName.name];
+  try {
+    var target = mori.first(seq);
+    return Promise.resolve(target[this.propertyName.name]);
+  } catch (e) {
+    return Promise.reject(e);
+  }
 };
 
 module.exports = PropertyGetter;
