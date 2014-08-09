@@ -259,6 +259,42 @@ describe('runtime', function () {
       });
     });
 
+    it('prints strings', function () {
+      return rt.loadString('(print-string "a")').then(function (r) {
+        expect(r).to.equal('"a"');
+      });
+    });
+
+    it('prints true', function () {
+      return rt.loadString('(print-string true)').then(function (r) {
+        expect(r).to.equal('true');
+      });
+    });
+
+    it('prints false', function () {
+      return rt.loadString('(print-string false)').then(function (r) {
+        expect(r).to.equal('false');
+      });
+    });
+
+    it('prints vectors of keywords', function () {
+      return rt.loadString('(print-string [:hello :world])').then(function (r) {
+        expect(r).to.equal('[:hello :world]');
+      });
+    });
+
+    it('prints maps of keywords and strings', function () {
+      return rt.loadString('(print-string {:hello "hello" :world "world"})').then(function (r) {
+        expect(r).to.equal('{:hello "hello" :world "world"}');
+      });
+    });
+
+    it('prints lists of keywords', function () {
+      return rt.loadString('(print-string (quote (:hello :world)))').then(function (r) {
+        expect(r).to.equal('(:hello :world)');
+      });
+    });
+
     describe('if', function () {
 
       it('returns the first expression if true', function () {

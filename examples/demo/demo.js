@@ -13,7 +13,7 @@ rt.start().then(function () {
 
   repl.eval = function (code) {
     rt.loadString(code).then(function (result) {
-      repl.print(result, 'result');
+      repl.print(zap.printString(result), 'result');
     }, function (err) {
       repl.print(err, 'error');
     });

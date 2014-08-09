@@ -8,6 +8,7 @@ var WrappedFn = require('../lang/wrapped-fn.js');
 var Loader = require('./loader.js');
 var http = require('../net/http.js');
 var equals = require('../lang/equals.js');
+var printString = require('../lang/print-string.js');
 
 var zapCore = PkgName.withSegments('zap', 'core');
 var zapHttp = PkgName.withSegments('zap', 'http');
@@ -57,6 +58,9 @@ Runtime.prototype.addPreDefs = function () {
     }),
     wrapCore('type-of', function (a) {
       return typeof a;
+    }),
+    wrapCore('print-string', function () {
+      return printString.apply(null, arguments);
     }),
     this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
       return http.get(url).then(function (result) {
