@@ -117,6 +117,12 @@ describe('runtime', function () {
       });
     });
 
+    it.skip('looks up keywords in maps', function () {
+      return rt.loadString('(:hey {:hey "hey"})').then(function (r) {
+        expect(r).to.equal('hey');
+      });
+    });
+
     it('returns properties from Javascript objects', function () {
       return rt.loadString('(.-length "hello")').then(function (l) {
         expect(l).to.equal(5);
