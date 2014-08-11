@@ -1,7 +1,7 @@
 var Reader = require('./reader.js');
 var equals = require('../lang/equals.js');
 var Symbol = require('../lang/symbol.js');
-var Keyword = require('../lang/keyword.js');
+var keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
 var m = require('mori');
 
@@ -50,13 +50,6 @@ describe('reader', function () {
       expect(equals(read, map)).to.be.true;
     });
 
-    it('reads maps with keywords', function () {
-      var read = Reader.readString('{:key :a}');
-      var map = m.hash_map(new Keyword(':key'), new Keyword(':a'));
-
-      expect(equals(read, map)).to.be.true;
-    });
-
     it('reads strings', function () {
       var read = Reader.readString('"hello"');
 
@@ -69,11 +62,19 @@ describe('reader', function () {
       expect(equals(read, "\n")).to.be.true;
     });
 
+    it('reads maps with keywords', function () {
+      var read = Reader.readString('{:key :a}');
+      var map = m.hash_map(keyword.fromString(':key'), keyword.fromString(':a'));
+
+      expect(equals(read, map)).to.be.true;
+    });
+
     it('reads keywords', function () {
       var read = Reader.readString(':hello');
-      var keyword = new Keyword(':hello');
+      var kw = keyword.fromString(':hello');
 
-      expect(equals(read, keyword)).to.be.true;
+      expect(equals(read, kw)).to.be.true;
+      expect(keyword.isInstance(read)).to.be.true;
     });
 
     it('reads symbols', function () {

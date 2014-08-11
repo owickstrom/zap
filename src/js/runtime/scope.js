@@ -1,6 +1,7 @@
 var mori = require('mori');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
+var keyword = require('../lang/keyword.js');
 var Symbol = require('../lang/symbol.js');
 var Closure = require('./closure.js');
 var SpecialForms = require('./special-forms.js');
@@ -200,6 +201,10 @@ Scope.prototype.eval = function (form) {
         return newVector;
       }, reject).then(resolve, reject);
 
+    } else if (keyword.isInstance(form)) {
+      // Treat keywords (which are actually a mori hash map with only one key)
+      // different from maps in general.
+      return resolve(form);
     } else if (mori.is_map(form)) {
       return resolve(evalMap(self, form));
     } else if (Symbol.isInstance(form)) {

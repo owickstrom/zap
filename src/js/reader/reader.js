@@ -2,7 +2,7 @@ var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
 var TokenScanner = require('./token-scanner.js');
 var Symbol = require('../lang/symbol.js');
-var Keyword = require('../lang/keyword.js');
+var keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
 var MethodName = require('../lang/method-name.js');
 var PropertyName = require('../lang/property-name.js');
@@ -148,7 +148,7 @@ function readString(reader) {
 readerFns[Token.STRING_START] = readString;
 
 readerFns[Token.KEYWORD] = readSimple(Token.KEYWORD, function (token) {
-  return new Keyword(token.text);
+  return keyword.fromString(token.text);
 });
 
 // Ignored tokens.

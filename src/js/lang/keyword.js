@@ -1,33 +1,37 @@
 var mori = require('mori');
-var printString = require('./print-string.js');
 
-function Keyword(text) {
+module.exports.fromString = function (text) {
   if (text && text.length > 0 && text[0] === ':') {
-    this.text = text;
+    var m = mori.hash_map('text', text);
+
+    m.__type = 'Keyword';
+
+    m.apply = function (seq) {
+      var first = mori.first(seq);
+
+      if (!mori.is_map(first)) {
+        return Promise.reject(m.toString() + ' cannot only be applied to maps');
+      }
+
+      return mori.get(first, m);
+    }
+
+    m.toString = function () {
+      return mori.get(m, 'text');
+    }
+
+    m.equals = function (other) {
+      var thisText = mori.get(m, 'text');
+      var otherText = mori.get(other, 'text');
+      return thisText === otherText;
+    }
+
+    return m;
   } else {
-    throw new Error('Invalid keyword: "' + text + '"');
+    throw new Error('Invalid keyword: ' + text);
   }
-}
-
-Keyword.prototype.equals = function (other) {
-  if (!other) {
-    return false;
-  }
-  return this.text === other.text;
-}
-
-Keyword.prototype.toString = function () {
-  return this.text;
 };
 
-Keyword.prototype.apply = function (seq) {
-  var first = mori.first(seq);
-
-  if (!mori.is_map(first)) {
-    return Promise.reject(printString(this, 'cannot be applied to', first))
-  }
-
-  return mori.get(first, this.name);
+module.exports.isInstance = function (o) {
+  return mori.is_map(o) && o.__type === 'Keyword';
 };
-
-module.exports = Keyword;

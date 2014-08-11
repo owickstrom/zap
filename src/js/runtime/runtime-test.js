@@ -3,7 +3,7 @@ var Runtime = require('./runtime.js');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
 var Symbol = require('../lang/symbol.js');
-var Keyword = require('../lang/keyword.js');
+var keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
 
 describe('runtime', function () {
@@ -39,8 +39,8 @@ describe('runtime', function () {
     });
 
     it('evals keywords', function () {
-      return rt.loadString(':my-keyword').then(function (keyword) {
-        expect(equals(keyword, new Keyword(':my-keyword'))).to.be.true;
+      return rt.loadString(':my-keyword').then(function (r) {
+        expect(equals(r, keyword.fromString(':my-keyword'))).to.be.true;
       })
     });
 
@@ -165,8 +165,8 @@ describe('runtime', function () {
     });
 
     it('lets local bindings', function () {
-      return rt.loadString('(let [a :a] a)').then(function (keyword) {
-        expect(equals(keyword, new Keyword(':a'))).to.be.true;
+      return rt.loadString('(let [a :a] a)').then(function (r) {
+        expect(equals(r, keyword.fromString(':a'))).to.be.true;
       });
     });
 
@@ -178,7 +178,7 @@ describe('runtime', function () {
 
     it('evals vectors of local bindings', function () {
       return rt.loadString('(let [a :a b :b] [a b])').then(function (vector) {
-        var expected = mori.vector(new Keyword(':a'), new Keyword(':b'));
+        var expected = mori.vector(keyword.fromString(':a'), keyword.fromString(':b'));
         expect(equals(vector, expected)).to.be.true;
       });
     });
@@ -186,10 +186,10 @@ describe('runtime', function () {
     it('evals maps of local bindings', function () {
       return rt.loadString('(let [a :a b :b] {a a b b})').then(function (map) {
         var expected = mori.hash_map(
-          new Keyword(':a'),
-          new Keyword(':a'),
-          new Keyword(':b'),
-          new Keyword(':b'));
+          keyword.fromString(':a'),
+          keyword.fromString(':a'),
+          keyword.fromString(':b'),
+          keyword.fromString(':b'));
         expect(equals(map, expected)).to.be.true;
       });
     });
@@ -327,7 +327,7 @@ describe('runtime', function () {
 
     it('adds metadata to collections', function () {
       return rt.loadString('(with-meta {:doc "Stuff"} [:my :stuff])').then(function (stuff) {
-        var expected = mori.hash_map(new Keyword(':doc'), 'Stuff');
+        var expected = mori.hash_map(keyword.fromString(':doc'), 'Stuff');
         expect(equals(stuff.__meta, expected)).to.be.true;
       });
     });
@@ -335,7 +335,7 @@ describe('runtime', function () {
     it('retrieves metadata added to collections', function () {
       return rt.loadString('(def stuff (with-meta {:doc "Stuff"} [:my :stuff]))').then(function () {
         return rt.loadString('(meta stuff)').then(function (meta) {
-          var expected = mori.hash_map(new Keyword(':doc'), 'Stuff');
+          var expected = mori.hash_map(keyword.fromString(':doc'), 'Stuff');
           expect(equals(meta, expected)).to.be.true;
         });
       });

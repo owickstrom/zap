@@ -1,4 +1,5 @@
 var mori = require('mori');
+var keyword = require('./keyword.js');
 
 function joinWithSpace(a, b) {
   return a + ' ' + b;
@@ -14,6 +15,8 @@ function printSingle(arg) {
     return 'nil';
   } else if (typeof arg === 'string') {
     return JSON.stringify(arg);
+  } else if (keyword.isInstance(arg)) {
+    return arg.toString();
   } else if (mori.is_list(arg)) {
     return seqToString(arg, '(', ')');
   } else if (mori.is_vector(arg)) {
