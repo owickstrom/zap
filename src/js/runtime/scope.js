@@ -75,7 +75,7 @@ specialForms.add('if', function (scope, args) {
         falseBranch = mori.first(mori.rest(exceptCondition));
       }
 
-      var conditionFalse = c === false || (mori.is_list(c) && mori.equals(mori.list(), c));
+      var conditionFalse = c === false || c === null;
 
       if (!conditionFalse) {
         return resolve(scope.eval(trueBranch));
@@ -150,14 +150,14 @@ Scope.empty = function (runtime) {
 
 Scope.prototype.resolve = function (symbol) {
   if(mori.has_key(this._values, symbol.name)) {
-    return mori.get(this._values, symbol.name);
+    return Promise.resolve(mori.get(this._values, symbol.name));
   }
 
   if (this._subScope) {
     return this._subScope.resolve(symbol);
   }
 
-  return null;
+  return Promise.reject('Could not resolve symbol: ' + symbol.toString());
 }
 
 // Evals the keys and values in the map and returns a promise of a new map
@@ -224,19 +224,24 @@ Scope.prototype.eval = function (form) {
       return resolve(evalMap(self, form));
     } else if (Symbol.isInstance(form)) {
       // Symbols are automatically derefed.
-      var bound = self.resolve(form);
+      self.resolve(form).then(function (bound) {
 
-      if (bound) {
+        // Symbol is bound in scope.
         return resolve(bound);
-      }
 
-      self.runtime.resolve(form).then(function (v) {
-        if (v) {
-          return resolve(v.deref());
-        } else {
-          return reject(new Error('Could not resolve symbol: ' + printString(form)));
-        }
-      }, reject);
+      }, function () {
+
+        // Not bound in scope.
+        self.runtime.resolve(form).then(function (v) {
+          if (v) {
+            return resolve(v.deref());
+          } else {
+            return reject(new Error('Could not resolve symbol: ' + printString(form)));
+          }
+        }, reject);
+
+      });
+
     } else if (MethodName.isInstance(form)) {
       return resolve(new MethodCall(form));
     } else if (PropertyName.isInstance(form)) {

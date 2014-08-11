@@ -25,6 +25,9 @@ Some of the supported stuff right now...
 
 ;; method invocation
 (def shout (fn [s] (str (.toUpperCase s) "!")))
+
+;; macros
+(defmacro when [condition body] (list (quote if) condition body))
 ```
 
 ## Prerequisites
