@@ -1,4 +1,3 @@
-var sprintf = require('sprintf-js').sprintf;
 var LexerPosition = require('./lexer-position.js');
 var Token = require('./token.js');
 var character = require('./character.js');
@@ -116,12 +115,13 @@ Lexer.prototype.eof = function () {
 }
 
 Lexer.prototype.error = function () {
-  this._emitWithText(Token.ERROR, sprintf.apply(null, arguments));
+  var s = Array.prototype.join.call(arguments, ' ');
+  this._emitWithText(Token.ERROR, s);
   return null;
 }
 
 Lexer.prototype.unexpectedCharacter = function (c) {
-  this.error('Unexpected character: %s', c);
+  this.error('Unexpected character: ' + c);
   return null;
 }
 

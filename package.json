@@ -16,7 +16,6 @@
   },
   "homepage": "https://github.com/owickstrom/zap",
   "dependencies": {
-    "sprintf-js": "0.0.7",
     "mori": "~0.2.9"
   },
   "devDependencies": {
