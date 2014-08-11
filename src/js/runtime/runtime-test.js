@@ -195,14 +195,20 @@ describe('runtime', function () {
     });
 
     it('creates closures with fn', function () {
-        return rt.loadString('(def shout (fn [a b] (str a "!")))').then(function () {
-          return rt.loadString('(shout "hello")').then(function (string){
-            expect(string).to.equal('hello!');
-          });
+      return rt.loadString('(def shout (fn [a b] (str a "!")))').then(function () {
+        return rt.loadString('(shout "hello")').then(function (string){
+          expect(string).to.equal('hello!');
         });
+      });
     });
 
-    it('creates macros with macro');
+    it('creates macros with macro', function () {
+      return rt.loadString('(def flip (macro [a b] (list b a)))').then(function () {
+        return rt.loadString('(flip "hello" string?)').then(function (isString) {
+          expect(isString).to.be.true;
+        });
+      });
+    });
 
     it('chains returned promises from functions', function () {
       return rt.loadString('(let [response (zap.http/get "/base/src/zap/zap/core.zap")' +

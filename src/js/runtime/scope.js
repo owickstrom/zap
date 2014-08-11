@@ -88,6 +88,14 @@ specialForms.add('if', function (scope, args) {
   });
 });
 
+// macro creates a fn that does not eval it's arguments, it just transforms
+// it as data.
+specialForms.add('macro', function (scope, args) {
+  var c = new Closure(scope, args);
+  c.setMacro();
+  return c;
+});
+
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
   this._values = values;
@@ -181,14 +189,21 @@ Scope.prototype.eval = function (form) {
       // TODO: macro call
 
       self.eval(first).then(function (fn) {
-        var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
-        Promise.all(argPromises).then(function (args) {
-          if (!fn.apply) {
-            return reject(printString(fn) + ' is not a fn');
-          }
-          //console.log(printString(fn, args, mori.first(args).__meta));
-          return resolve(fn.apply(mori.seq(args)));
-        }, reject);
+        if (!fn.apply) {
+          return reject(printString(fn) + ' is not a fn');
+        }
+
+        if (!!fn.isMacro && fn.isMacro()) {
+          fn.apply(mori.rest(seq)).then(function (expanded) {
+            self.eval(expanded).then(resolve, reject);
+          }, reject);
+
+        } else {
+          var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
+          Promise.all(argPromises).then(function (args) {
+            return resolve(fn.apply(mori.seq(args)));
+          }, reject);
+        }
       }, reject);
 
     } else if (mori.is_vector(form)) {

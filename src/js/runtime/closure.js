@@ -1,5 +1,6 @@
 var m = require('mori');
 var printString = require('../lang/print-string.js');
+var keyword = require('../lang/keyword.js');
 
 function Closure(scope, expressions) {
   this._scope = scope;
@@ -19,10 +20,22 @@ function createBindings(args, params) {
 Closure.prototype.apply = function (params) {
   var self = this;
   var bindings = createBindings(this._args, params);
+  var evalArgs = !this.isMacro();
 
-  return self._scope.wrap(bindings, true).then(function (scope) {
+  return self._scope.wrap(bindings, evalArgs).then(function (scope) {
     return scope.eval(self._body);
   });
+};
+
+var macroKey = keyword.fromString(':macro');
+
+Closure.prototype.setMacro = function () {
+  this.meta = m.assoc(this.meta, macroKey, true);
+};
+
+Closure.prototype.isMacro = function () {
+  var macro = m.get(this.meta, macroKey);
+  return macro === true;
 };
 
 Closure.prototype.toString = function () {

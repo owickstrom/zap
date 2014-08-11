@@ -1,3 +1,11 @@
+(def defmacro
+  (macro [name bindings body]
+         (list (quote def)
+               name
+               (list (quote macro)
+                     bindings
+                     body))))
+
 (def uppercase (fn [s] (.toUpperCase s)))
 
 (def length (fn [s] (.-length s)))

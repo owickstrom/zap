@@ -79,6 +79,15 @@ Runtime.prototype.addPreDefs = function () {
         return Promise.reject(printString(coll) + ' does not support metadata');
       }
     }),
+    wrapCore('list', function () {
+      return mori.list.apply(null, arguments);
+    }),
+    wrapCore('vector', function () {
+      return mori.vector.apply(null, arguments);
+    }),
+    wrapCore('hash-map', function () {
+      return mori.hash_map.apply(null, arguments);
+    }),
     this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
       return http.get(url).then(function (result) {
         return result.data;
