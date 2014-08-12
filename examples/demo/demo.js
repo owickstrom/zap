@@ -7,7 +7,9 @@ var repl = new CodeMirrorREPL('repl', {
 $('.CodeMirror').addClass('cm-s-tomorrow-night-eighties');
 $('.CodeMirror-gutter').addClass('CodeMirror-gutters');
 
-var rt = new zap.Runtime('../../src/zap');
+var loader = new zap.BrowserLoader('../../src/zap');
+var rt = new zap.Runtime(loader);
+
 rt.start().then(function () {
   repl.print(';; welcome to zap!', 'message');
 

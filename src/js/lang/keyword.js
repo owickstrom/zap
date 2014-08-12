@@ -1,3 +1,4 @@
+var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 
 module.exports.fromString = function (text) {

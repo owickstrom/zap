@@ -1,3 +1,4 @@
+var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var Reader = require('../reader/reader.js');
 var Scope = require('./scope.js');
@@ -5,7 +6,6 @@ var Symbol = require('../lang/symbol.js');
 var Pkg = require('../lang/pkg.js');
 var PkgName = require('../lang/pkg-name.js');
 var WrappedFn = require('../lang/wrapped-fn.js');
-var Loader = require('./loader.js');
 var http = require('../net/http.js');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
@@ -13,17 +13,22 @@ var printString = require('../lang/print-string.js');
 var zapCore = PkgName.withSegments('zap', 'core');
 var zapHttp = PkgName.withSegments('zap', 'http');
 
-function Runtime(base) {
+function Runtime(loader) {
   this.rootScope = new Scope(this, mori.hash_map(), null);
   this.pkgs = mori.hash_map();
   this.pkg = this.getPkg(zapCore);
-  this._loader = new Loader(base);
+  this._loader = loader;
 }
 
 Runtime.prototype.addPreDefs = function () {
   var self = this;
   function wrapCore(name, f) {
     return self.def(Symbol.inPkg(name, zapCore), new WrappedFn(f));
+  }
+  function wrapMori(name, f) {
+    return wrapCore(name, function () {
+      return f.apply(null, arguments);
+    });
   }
   return Promise.all([
     wrapCore('+', function (a, b) {
@@ -92,20 +97,23 @@ Runtime.prototype.addPreDefs = function () {
       }
     }),
     // TODO: Write in zap
-    wrapCore('list', function () {
-      return mori.list.apply(null, arguments);
-    }),
+    wrapMori('list', mori.list),
     // TODO: Write in zap
-    wrapCore('vector', function () {
-      return mori.vector.apply(null, arguments);
-    }),
+    wrapMori('vector', mori.vector),
     // TODO: Write in zap
-    wrapCore('hash-map', function () {
-      return mori.hash_map.apply(null, arguments);
-    }),
+    wrapMori('hash-map', mori.hash_map),
+    // TODO: Write in zap
+    wrapMori('first', mori.first),
+    // TODO: Write in zap
+    wrapMori('rest', mori.rest),
+    // TODO: Write in zap
+    wrapMori('conj', mori.conj),
+    // TODO: Write in zap
+    wrapMori('cons', mori.cons),
+
     this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
       return http.get(url).then(function (result) {
-        return result.data;
+        return mori.js_to_clj(result.data);
       });
     }))
   ]);
@@ -152,11 +160,20 @@ Runtime.prototype.resolve = function (symbol) {
 Runtime.prototype.require = function (pkgName) {
   var self = this;
   return new Promise(function (resolve, reject) {
-    self._loader.loadSource(pkgName).then(function (source) {
+    self._loader.readZapSource(pkgName).then(function (source) {
       resolve(self.loadTopLevelFormsString(source));
     }, function (err) {
       reject(new Error('Failed to require ' + pkgName.toString() + ': ' + err));
     });
+  });
+};
+
+Runtime.prototype.loadFile = function (path) {
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    self._loader.readFile(path).then(function (source) {
+      self.loadTopLevelFormsString(source).then(resolve, reject);
+    }, reject);
   });
 };
 

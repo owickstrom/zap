@@ -28,6 +28,9 @@ Some of the supported stuff right now...
 
 ;; macros
 (defmacro when [condition body] (list (quote if) condition body))
+
+;; metadata (on data structures and fns so far...)
+(def identity (with-meta {:doc "Returns it's argument."} (fn [a] a)))
 ```
 
 ## Prerequisites

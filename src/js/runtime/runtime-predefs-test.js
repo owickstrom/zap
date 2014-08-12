@@ -1,5 +1,6 @@
 var mori = require('mori');
 var Runtime = require('./runtime.js');
+var BrowserLoader = require('./browser-loader.js');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
 var Symbol = require('../lang/symbol.js');
@@ -10,7 +11,8 @@ describe('runtime', function () {
     var rt;
 
     beforeEach(function () {
-      rt = new Runtime('/base/src/zap');
+      var loader = new BrowserLoader('/base/src/zap');
+      rt = new Runtime(loader);
       return rt.start();
     });
 

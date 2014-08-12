@@ -1,10 +1,10 @@
 var http = require('../net/http.js');
 
-function Loader(base) {
+function BrowserLoader(base) {
   this._base = base;
 }
 
-Loader.prototype.loadSource = function (pkgName) {
+BrowserLoader.prototype.readZapSource = function (pkgName) {
   var self = this;
   var segments = pkgName.segmentsAsArray();
   var relPath = segments.join('/') + '.zap';
@@ -15,4 +15,4 @@ Loader.prototype.loadSource = function (pkgName) {
   });
 }
 
-module.exports = Loader;
+module.exports = BrowserLoader;

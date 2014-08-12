@@ -1,12 +1,9 @@
-(pkg async
-  (:require [zap.http :as http]))
+(defn get-source [file-name]
+  (http.get (str "../working/" file-name)))
 
-(defn friends-of [user]
-  (http.get (str "https://acme.com/api/users/" (:id user) "/friends")))
-
-; Promise-based crazy async stuff.
-(defn friends-in-common-of [a b]
-  (async
-    (let [af (await friends-of-user a)
-          bf (await friends-of-user b)]
-    (intersection a b))))
+(defn get-sources [sources]
+  (let [f (first sources)
+        r (rest sources)]
+    (if (empty? r)
+      f
+      (+ (get-source (first sources)) (get-sources (rest sources))))))

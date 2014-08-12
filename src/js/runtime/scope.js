@@ -1,3 +1,4 @@
+var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');

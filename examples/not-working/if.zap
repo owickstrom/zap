@@ -1,1 +1,1 @@
-(println (if true "if works" "if does not work :/"))
+(if true "if works" "if does not work :/")

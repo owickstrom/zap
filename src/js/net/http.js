@@ -1,3 +1,5 @@
+var Promise = require('es6-promise').Promise;
+
 exports.get = function (url) {
   return new Promise(function (resolve, reject) {
     var xhr = new XMLHttpRequest();
