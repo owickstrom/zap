@@ -10,10 +10,10 @@ module.exports.fromString = function (text) {
       var first = mori.first(seq);
 
       if (!mori.is_map(first)) {
-        return Promise.reject(m.toString() + ' cannot only be applied to maps');
+        return Promise.resolve(null);
       }
 
-      return mori.get(first, m);
+      return Promise.resolve(mori.get(first, m));
     }
 
     m.toString = function () {

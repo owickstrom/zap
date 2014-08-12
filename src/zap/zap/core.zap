@@ -6,20 +6,29 @@
                      bindings
                      body))))
 
-(def uppercase (fn [s] (.toUpperCase s)))
+(defmacro defn [name bindings body]
+  (list (quote def)
+        name
+        (list (quote fn)
+              bindings
+              body)))
 
-(def length (fn [s] (.-length s)))
+(defn uppercase [s] (.toUpperCase s))
 
-(def constructor (fn [s] (.-constructor s)))
+(defn length [s] (.-length s))
 
-(def constructor-name (fn [s] (.-name (.-constructor s))))
+(defn string?  [v] (= (type-of v) "string"))
 
-(def string? (fn [v] (= (type-of v) "string")))
+(defn to-string  [v] (if (string? v) v (+ "" v)))
 
-(def to-string (fn [v] (if (string? v) v (+ "" v))))
+;; TODO: Fix arity
+(defn str [a b] (+ (to-string a) (to-string b)))
 
-(def str (fn [a b] (+ (to-string a) (to-string b))))
+(defn meta [v] (if v (.-__meta v)))
 
-(def meta (fn [v] (.-__meta v)))
+(defn doc [v] (:doc (meta v)))
 
-(def doc (fn [v] (:doc (meta v))))
+(defn constructor [s] (.-constructor s))
+
+(defn constructor-name [s] (.-name (.-constructor s)))
+

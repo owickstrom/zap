@@ -62,29 +62,44 @@ Runtime.prototype.addPreDefs = function () {
     wrapCore('print-string', function () {
       return printString.apply(null, arguments);
     }),
-    wrapCore('with-meta', function (meta, coll) {
-      if (mori.is_collection(coll)) {
+    wrapCore('aset', function (obj, prop, value) {
+      if (obj === null || obj === undefined) {
+        return Promise.reject('Cannot set property ' + prop + ' of ' + printString(obj)); 
+      }
+      obj[prop] = value;
+      return Promise.resolve(value);
+    }),
+    // TODO: Write in zap
+    wrapCore('with-meta', function (meta, obj) {
+      if (obj === null || obj === undefined) {
+        return null;
+      } else if (mori.is_collection(obj)) {
         var result;
-        if (mori.is_list(coll)) {
+        if (mori.is_list(obj)) {
           result = mori.list();
-        } else if (mori.is_vector(coll)) {
+        } else if (mori.is_vector(obj)) {
           result = mori.vector();
-        } else if (mori.is_map(coll)) {
+        } else if (mori.is_map(obj)) {
           result = mori.hash_map();
         }
-        var copy = mori.into(result, coll);
+        var copy = mori.into(result, obj);
         copy.__meta = meta;
         return Promise.resolve(copy);
+      } else if (typeof obj.withMeta === 'function') {
+        return obj.withMeta(meta);
       } else {
-        return Promise.reject(printString(coll) + ' does not support metadata');
+        return Promise.reject(new Error(printString(obj) + ' does not support metadata'));
       }
     }),
+    // TODO: Write in zap
     wrapCore('list', function () {
       return mori.list.apply(null, arguments);
     }),
+    // TODO: Write in zap
     wrapCore('vector', function () {
       return mori.vector.apply(null, arguments);
     }),
+    // TODO: Write in zap
     wrapCore('hash-map', function () {
       return mori.hash_map.apply(null, arguments);
     }),

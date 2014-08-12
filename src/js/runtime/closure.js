@@ -8,6 +8,14 @@ function Closure(scope, expressions) {
   this._body = m.first(m.rest(expressions));
 }
 
+Closure.prototype.clone = function () {
+  var clone = new Closure(m.list(), m.list());
+  clone._scope = this._scope;
+  clone._args = this._args;
+  clone._body = this._body;
+  return clone;
+};
+
 function createBindings(args, params) {
   if (m.count(args) === 0) {
     return m.vector();
@@ -36,6 +44,12 @@ Closure.prototype.setMacro = function () {
 Closure.prototype.isMacro = function () {
   var macro = m.get(this.meta, macroKey);
   return macro === true;
+};
+
+Closure.prototype.withMeta = function (metadata) {
+  var clone = this.clone();
+  clone.__meta = metadata;
+  return clone;
 };
 
 Closure.prototype.toString = function () {

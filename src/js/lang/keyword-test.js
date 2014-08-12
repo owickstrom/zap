@@ -30,15 +30,15 @@ describe('lang', function () {
     it('looks up itself in maps', function () {
       var kw = keyword.fromString(':hello');
       var map = mori.hash_map(kw, 123);
-      expect(kw.apply(mori.list(map))).to.equal(123);
+      kw.apply(mori.list(map)).then(function (r) {
+        expect(r).to.equal(123);
+      });
     });
 
-    it('rejects when applied to a non-map object', function (done) {
+    it('returns nil when applied to a non-map object', function () {
       var kw = keyword.fromString(':hello');
-      return kw.apply('hej').then(function () {
-        done('should reject')
-      }, function () {
-        done();
+      return kw.apply('hej').then(function (r) {
+        return expect(r).to.be.null;
       });
     });
 

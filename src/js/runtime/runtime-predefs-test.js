@@ -144,10 +144,28 @@ describe('runtime', function () {
       });
     });
 
+    it('adds metadata to fns', function () {
+      return rt.loadString('(with-meta {:doc "Stuff"} (fn [a] a))').then(function (fn) {
+        var expected = mori.hash_map(keyword.fromString(':doc'), 'Stuff');
+        expect(equals(fn.__meta, expected)).to.be.true;
+      });
+    });
+
     it('looks up docs', function () {
       return rt.loadString('(def stuff (with-meta {:doc "Stuff"} [:my :stuff]))').then(function () {
         return rt.loadString('(doc stuff)').then(function (doc) {
           expect(doc).to.equal('Stuff');
+        });
+      });
+    });
+
+    it('sets object properties with aset', function () {
+      var symbol = Symbol.withoutPkg('my-obj');
+      return rt.def(symbol, {}).then(function () {
+        return rt.loadString('(aset my-obj "test" "hello")').then(function () {
+          return rt.loadString('my-obj').then(function (myObj) {
+            expect(myObj.test).to.equal('hello');
+          });
         });
       });
     });
