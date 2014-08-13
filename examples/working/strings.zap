@@ -1,4 +1,4 @@
-(pkg strings)
+;(pkg strings)
 
 (def a "A string")
 

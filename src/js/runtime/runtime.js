@@ -64,12 +64,15 @@ Runtime.prototype.addPreDefs = function () {
     wrapCore('type-of', function (a) {
       return typeof a;
     }),
+    wrapCore('println', function () {
+      return console.log.apply(console, arguments);
+    }),
     wrapCore('print-string', function () {
       return printString.apply(null, arguments);
     }),
     wrapCore('aset', function (obj, prop, value) {
       if (obj === null || obj === undefined) {
-        return Promise.reject('Cannot set property ' + prop + ' of ' + printString(obj)); 
+        return Promise.reject('Cannot set property ' + prop + ' of ' + printString(obj));
       }
       obj[prop] = value;
       return Promise.resolve(value);

@@ -17,6 +17,7 @@ if (args.length < 2) {
 var file = args[1];
 
 rt.loadFile(file).then(function (result) {
+  console.log(printString(mori.last(result)));
   process.exit(0);
 }, function (e) {
   console.error('Error', e);
