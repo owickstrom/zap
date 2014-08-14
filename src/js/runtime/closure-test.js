@@ -1,3 +1,4 @@
+var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var Runtime = require('./runtime.js');
 var BrowserLoader = require('./browser-loader.js');
@@ -20,6 +21,12 @@ describe('runtime', function () {
       return mori.list(mori.vector(a), a);
     }
 
+    function lastOfArgsExpressions() {
+      var a = Symbol.withoutPkg('a');
+      var b = Symbol.withoutPkg('b');
+      return mori.list(mori.list(mori.vector(a), a), mori.list(mori.vector(a, b), b));
+    }
+
     it('is a normal Javascript function', function () {
       var c = closure.create(rt.rootScope, identityExpressions());
 
@@ -27,5 +34,21 @@ describe('runtime', function () {
         expect(r).to.equal('test');
       });
     });
+
+    it('supports arity overloading with one and two args', function () {
+      var c = closure.create(rt.rootScope, lastOfArgsExpressions());
+
+      var first = c('test').then(function (r) {
+        expect(r).to.equal('test');
+      });
+      var second = c('test', 'test2').then(function (r) {
+        expect(r).to.equal('test2');
+      });
+
+      return Promise.all([first, second]);
+    });
+
+    it('can be variadic');
+
   });
 });

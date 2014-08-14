@@ -11,17 +11,53 @@ function createBindings(args, params) {
   return m.concat(pair, createBindings(m.rest(args), m.rest(params)));
 }
 
+function expressionsToOverloads(expressions) {
+  if (m.count(expressions) % 2 !== 0) {
+    throw new Error('Invalid fn: ' + printString(expressions));
+  }
+
+  var expressionPairs = expressions;
+
+  // If it is not an overloaded function, wrap the args and body anyway so it
+  // can be handled the same as overloaded ones.
+  if (!m.is_list(m.first(expressions))) {
+    expressionPairs = m.list(expressions);
+  }
+
+  var overloads = {};
+
+  m.each(expressionPairs, function (pair) {
+    var args = m.first(pair);
+    overloads[m.count(args)] = {
+      args: args,
+      body: m.first(m.rest(pair))
+    };
+  });
+
+  return {
+    getMatching: function (params) {
+      var count = m.count(params);
+      return overloads[count];
+    }
+  };
+}
+
 function create(scope, expressions) {
-  var args = m.first(expressions);
-  var body = m.first(m.rest(expressions));
+  var overloads = expressionsToOverloads(expressions);
 
   var fn = function () {
     var params = m.prim_seq(arguments);
-    var bindings = createBindings(args, params);
+    var overload = overloads.getMatching(params);
+
+    if (!overload) {
+      return Promise.reject(new Error('Invalid number of parameters'));
+    }
+
+    var bindings = createBindings(overload.args, params);
     var evalArgs = !fn.isMacro();
 
     return scope.wrap(bindings, evalArgs).then(function (scope) {
-      return scope.eval(body);
+      return scope.eval(overload.body);
     });
   };
 
