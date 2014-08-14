@@ -20,17 +20,21 @@ Some of the supported stuff right now...
 ;; functions
 ((fn [a] (uppercase a)) "hello")
 
-;; property access
-(def constructor-name (fn [v] (.-name (.-constructor v))))
-
-;; method invocation
-(def shout (fn [s] (str (.toUpperCase s) "!")))
-
 ;; macros
 (defmacro when [condition body] (list (quote if) condition body))
 
 ;; metadata (on data structures and fns so far...)
 (def identity (with-meta {:doc "Returns its argument."} (fn [a] a)))
+
+;; javascript interop
+(defn render [] (render-stuff))
+(js/requestAnimationFrame render)
+
+;; property access
+(def constructor-name (fn [v] (.-name (.-constructor v))))
+
+;; method invocation
+(def shout (fn [s] (str (.toUpperCase s) "!")))
 ```
 
 ## Prerequisites

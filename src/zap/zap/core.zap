@@ -32,3 +32,6 @@
 
 (defn constructor-name [s] (.-name (.-constructor s)))
 
+(defn parse-int [s] (.parseInt js/Number s))
+
+(defn parse-float [s] (.parseFloat js/Number s))
