@@ -235,7 +235,12 @@ Scope.prototype.eval = function (form) {
         // Not bound in scope.
         self.runtime.resolve(form).then(function (v) {
           if (v) {
-            return resolve(v.deref());
+            // Check if it derefs.
+            if (v.deref) {
+              return resolve(v.deref());
+            } else {
+              return resolve(v);
+            }
           } else {
             return reject(new Error('Could not resolve symbol: ' + printString(form)));
           }

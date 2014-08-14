@@ -2,6 +2,8 @@ var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var Reader = require('../reader/reader.js');
 var Scope = require('./scope.js');
+var BrowserInterop = require('./browser-interop.js');
+var isInterop = require('./is-interop.js');
 var Symbol = require('../lang/symbol.js');
 var Pkg = require('../lang/pkg.js');
 var PkgName = require('../lang/pkg-name.js');
@@ -18,6 +20,7 @@ function Runtime(loader) {
   this.pkgs = mori.hash_map();
   this.pkg = this.getPkg(zapCore);
   this._loader = loader;
+  this._interop = new BrowserInterop();
 }
 
 Runtime.prototype.addPreDefs = function () {
@@ -156,6 +159,10 @@ Runtime.prototype.def = function (symbol, value) {
 };
 
 Runtime.prototype.resolve = function (symbol) {
+  var self = this;
+  if (isInterop(symbol)) {
+    return self._interop.resolve(symbol);
+  }
   var pkg = this._qualifiedOrCurrentPkg(symbol);
   return pkg.resolve(symbol);
 };

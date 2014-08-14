@@ -219,6 +219,13 @@ describe('runtime', function () {
       });
     });
 
+    it('interops with Javascript', function () {
+      window.testing = "hello";
+      return rt.loadString('js/testing').then(function (w) {
+        expect(w).to.equal('hello');
+      });
+    });
+
     describe('if', function () {
 
       it('returns the first expression if true', function () {
