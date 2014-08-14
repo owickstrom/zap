@@ -35,6 +35,11 @@ Some of the supported stuff right now...
 
 ;; method invocation
 (def shout (fn [s] (str (.toUpperCase s) "!")))
+
+;; async execution (any expression can return a promise)
+(let [r (zap.http/get "http://some.url.net")
+      title (get-title r)]
+  (println "The title is" title))
 ```
 
 ## Prerequisites
