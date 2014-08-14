@@ -4,12 +4,12 @@ var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
 var keyword = require('../lang/keyword.js');
 var Symbol = require('../lang/symbol.js');
-var Closure = require('./closure.js');
+var closure = require('./closure.js');
 var SpecialForms = require('./special-forms.js');
 var MethodName = require('../lang/method-name.js');
-var MethodCall = require('./method-call.js');
+var methodCall = require('./method-call.js');
 var PropertyName = require('../lang/property-name.js');
-var PropertyGetter = require('./property-getter.js');
+var propertyGetter = require('./property-getter.js');
 
 var specialForms = new SpecialForms();
 
@@ -52,7 +52,7 @@ specialForms.add('let', function (scope, args) {
 //
 // fn creates a closure.
 specialForms.add('fn', function (scope, args) {
-  return new Closure(scope, args);
+  return closure.create(scope, args);
 });
 
 // if does what you'd expect.
@@ -92,7 +92,7 @@ specialForms.add('if', function (scope, args) {
 // macro creates a fn that does not eval it's arguments, it just transforms
 // it as data.
 specialForms.add('macro', function (scope, args) {
-  var c = new Closure(scope, args);
+  var c = closure.create(scope, args);
   c.setMacro();
   return c;
 });
@@ -195,14 +195,15 @@ Scope.prototype.eval = function (form) {
         }
 
         if (!!fn.isMacro && fn.isMacro()) {
-          fn.apply(mori.rest(seq)).then(function (expanded) {
+          var params = mori.into_array(mori.rest(seq));
+          fn.apply(null, params).then(function (expanded) {
             self.eval(expanded).then(resolve, reject);
           }, reject);
 
         } else {
           var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
           Promise.all(argPromises).then(function (args) {
-            return resolve(fn.apply(mori.seq(args)));
+            return resolve(fn.apply(null, args));
           }, reject);
         }
       }, reject);
@@ -249,9 +250,9 @@ Scope.prototype.eval = function (form) {
       });
 
     } else if (MethodName.isInstance(form)) {
-      return resolve(new MethodCall(form));
+      return resolve(methodCall.create(form));
     } else if (PropertyName.isInstance(form)) {
-      return resolve(new PropertyGetter(form));
+      return resolve(propertyGetter.create(form));
     } else {
       return resolve(form);
     }

@@ -30,14 +30,14 @@ describe('lang', function () {
     it('looks up itself in maps', function () {
       var kw = keyword.fromString(':hello');
       var map = mori.hash_map(kw, 123);
-      kw.apply(mori.list(map)).then(function (r) {
+      kw.apply(null, map).then(function (r) {
         expect(r).to.equal(123);
       });
     });
 
     it('returns nil when applied to a non-map object', function () {
       var kw = keyword.fromString(':hello');
-      return kw.apply('hej').then(function (r) {
+      return kw.apply(null, 'hej').then(function (r) {
         return expect(r).to.be.null;
       });
     });

@@ -1,24 +1,25 @@
 var mori = require('mori');
 var printString = require('../lang/print-string.js');
 
-function MethodCall(methodName) {
-  this.methodName = methodName;
+function create(methodName) {
+  var fn = function (target) {
+    if (!target) {
+      throw new Error('Cannot call ' + printString(methodName) + ' on ' + target);
+    }
+
+    var args = Array.prototype.slice.call(arguments, 1);
+    var method = target[methodName.name];
+
+    return method.apply(target, args);
+  };
+
+  fn.toString = function () {
+    return '(' + printString(methodName) + ' ...)';
+  };
+
+  return fn;
 }
 
-MethodCall.prototype.toString = function () {
-  return '(' + printString(this.methodName) + ' ...)';
+module.exports = {
+  create: create
 };
-
-MethodCall.prototype.apply = function (seq) {
-  if (mori.count(seq) === 0) {
-    throw new Error('Cannot call ' + printString(this.methodName) + ' on nothing');
-  }
-
-  var target = mori.first(seq);
-  var args = mori.clj_to_js(mori.rest(seq)) || [];
-  var fn = target[this.methodName.name];
-
-  return fn.apply(target, args);
-};
-
-module.exports = MethodCall;

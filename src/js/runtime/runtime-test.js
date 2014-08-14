@@ -35,7 +35,7 @@ describe('runtime', function () {
       var core = PkgName.withSegments('zap', 'core');
       return rt.require(core).then(function (required) {
         return rt.resolve(Symbol.inPkg('+', core)).then(function (addVar) {
-          expect(addVar.deref().apply(mori.list(1, 2))).to.equal(3);
+          expect(addVar.deref()(1, 2)).to.equal(3);
         });
       });
     });
@@ -134,8 +134,7 @@ describe('runtime', function () {
     it('returns properties from Javascript objects in fns', function () {
       return rt.loadString('(fn [v] (.-__meta v))').then(function (meta) {
         return rt.loadString('(with-meta {:doc "hej"} [:yo])').then(function (yo) {
-          return meta.apply(mori.list(yo)).then(function (r) {
-            //console.log(printString(yo.meta, meta, r));
+          return meta(yo).then(function (r) {
             expect(mori.is_map(r)).to.be.true;
           });
         });

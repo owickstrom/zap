@@ -7,7 +7,6 @@ var isInterop = require('./is-interop.js');
 var Symbol = require('../lang/symbol.js');
 var Pkg = require('../lang/pkg.js');
 var PkgName = require('../lang/pkg-name.js');
-var WrappedFn = require('../lang/wrapped-fn.js');
 var http = require('../net/http.js');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
@@ -26,7 +25,7 @@ function Runtime(loader) {
 Runtime.prototype.addPreDefs = function () {
   var self = this;
   function wrapCore(name, f) {
-    return self.def(Symbol.inPkg(name, zapCore), new WrappedFn(f));
+    return self.def(Symbol.inPkg(name, zapCore), f);
   }
   function wrapMori(name, f) {
     return wrapCore(name, function () {
@@ -117,11 +116,11 @@ Runtime.prototype.addPreDefs = function () {
     // TODO: Write in zap
     wrapMori('cons', mori.cons),
 
-    this.def(Symbol.inPkg('get', zapHttp), new WrappedFn(function (url) {
+    this.def(Symbol.inPkg('get', zapHttp), function (url) {
       return http.get(url).then(function (result) {
         return mori.js_to_clj(result.data);
       });
-    }))
+    })
   ]);
 };
 

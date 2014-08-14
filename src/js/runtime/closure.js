@@ -2,20 +2,6 @@ var m = require('mori');
 var printString = require('../lang/print-string.js');
 var keyword = require('../lang/keyword.js');
 
-function Closure(scope, expressions) {
-  this._scope = scope;
-  this._args = m.first(expressions);
-  this._body = m.first(m.rest(expressions));
-}
-
-Closure.prototype.clone = function () {
-  var clone = new Closure(m.list(), m.list());
-  clone._scope = this._scope;
-  clone._args = this._args;
-  clone._body = this._body;
-  return clone;
-};
-
 function createBindings(args, params) {
   if (m.count(args) === 0) {
     return m.vector();
@@ -25,35 +11,48 @@ function createBindings(args, params) {
   return m.concat(pair, createBindings(m.rest(args), m.rest(params)));
 }
 
-Closure.prototype.apply = function (params) {
-  var self = this;
-  var bindings = createBindings(this._args, params);
-  var evalArgs = !this.isMacro();
+function create(scope, expressions) {
+  var args = m.first(expressions);
+  var body = m.first(m.rest(expressions));
 
-  return self._scope.wrap(bindings, evalArgs).then(function (scope) {
-    return scope.eval(self._body);
-  });
+  var fn = function () {
+    var params = m.prim_seq(arguments);
+    var bindings = createBindings(args, params);
+    var evalArgs = !fn.isMacro();
+
+    return scope.wrap(bindings, evalArgs).then(function (scope) {
+      return scope.eval(body);
+    });
+  };
+
+  fn.clone = function () {
+    return create(scope, expressions);
+  };
+
+  var macroKey = keyword.fromString(':macro');
+
+  fn.setMacro = function () {
+    fn.meta = m.assoc(fn.meta, macroKey, true);
+  };
+
+  fn.isMacro = function () {
+    var macro = m.get(fn.meta, macroKey);
+    return macro === true;
+  };
+
+  fn.withMeta = function (metadata) {
+    var clone = fn.clone();
+    clone.__meta = metadata;
+    return clone;
+  };
+
+  fn.toString = function () {
+    return '(fn ' + printString(args) + ' ' + printString(body) + ')';
+  };
+
+  return fn;
+}
+
+module.exports = {
+  create: create
 };
-
-var macroKey = keyword.fromString(':macro');
-
-Closure.prototype.setMacro = function () {
-  this.meta = m.assoc(this.meta, macroKey, true);
-};
-
-Closure.prototype.isMacro = function () {
-  var macro = m.get(this.meta, macroKey);
-  return macro === true;
-};
-
-Closure.prototype.withMeta = function (metadata) {
-  var clone = this.clone();
-  clone.__meta = metadata;
-  return clone;
-};
-
-Closure.prototype.toString = function () {
-  return '(fn ' + printString(this._args) + ' ' + printString(this._body) + ')';
-};
-
-module.exports = Closure;

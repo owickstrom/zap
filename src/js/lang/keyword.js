@@ -7,7 +7,7 @@ module.exports.fromString = function (text) {
 
     m.__type = 'Keyword';
 
-    m.apply = function (seq) {
+    m.apply = function (_, seq) {
       var first = mori.first(seq);
 
       if (!mori.is_map(first)) {
