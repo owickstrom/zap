@@ -13,6 +13,9 @@
               bindings
               body)))
 
+(defn apply [f args]
+  (.apply f nil (zap->js args)))
+
 (defn uppercase [s] (.toUpperCase s))
 
 (defn length [s] (.-length s))
@@ -21,8 +24,10 @@
 
 (defn to-string  [v] (if (string? v) v (+ "" v)))
 
-;; TODO: Fix arity
-(defn str [a b] (+ (to-string a) (to-string b)))
+(defn str
+  ([] "")
+  ([& strs]
+   (+ (first strs) (apply str (rest strs)))))
 
 (defn meta [v] (if v (.-__meta v)))
 

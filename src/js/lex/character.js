@@ -10,7 +10,8 @@ var validNonAlphaNumeric = [
   '>',
   '=',
   '?',
-  '!'
+  '!',
+  '&'
 ];
 var character = {
   isWhitespace: function (c) {

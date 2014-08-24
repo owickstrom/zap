@@ -183,11 +183,13 @@ Scope.prototype.eval = function (form) {
       var seq = mori.seq(form);
       var first = mori.first(seq);
 
-      if (specialForms.has(first)) {
-        return resolve(specialForms.eval(self, first, seq));
+      if (!first) {
+        return resolve(form);
       }
 
-      // TODO: macro call
+      if (specialForms.has(first)) {
+        return specialForms.eval(self, first, seq).then(resolve, reject);
+      }
 
       self.eval(first).then(function (fn) {
         if (!fn.apply) {

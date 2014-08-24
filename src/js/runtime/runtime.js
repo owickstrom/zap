@@ -102,6 +102,8 @@ Runtime.prototype.addPreDefs = function () {
       }
     }),
     // TODO: Write in zap
+    wrapMori('seq', mori.seq),
+    // TODO: Write in zap
     wrapMori('list', mori.list),
     // TODO: Write in zap
     wrapMori('vector', mori.vector),
@@ -115,6 +117,18 @@ Runtime.prototype.addPreDefs = function () {
     wrapMori('conj', mori.conj),
     // TODO: Write in zap
     wrapMori('cons', mori.cons),
+    // TODO: Write in zap
+    wrapMori('empty?', mori.is_empty),
+    // TODO: Write in zap
+    wrapMori('map', mori.map),
+    // TODO: Write in zap
+    wrapMori('reduce', mori.reduce),
+    // TODO: Write in zap
+    wrapMori('filter', mori.filter),
+    // TODO: Write in zap
+    wrapMori('zap->js', mori.clj_to_js),
+    // TODO: Write in zap
+    wrapMori('js->zap', mori.js_to_clj),
 
     this.def(Symbol.inPkg('get', zapHttp), function (url) {
       return http.get(url).then(function (result) {
@@ -212,7 +226,7 @@ Runtime.prototype.loadString = function (s) {
   return new Promise(function (resolve, reject) {
     try {
       var value = Reader.readString(s);
-      return resolve(self.eval(value));
+      return self.eval(value).then(resolve, reject);
     } catch (e) {
       return reject(e);
     }

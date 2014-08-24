@@ -119,7 +119,7 @@ describe('runtime', function () {
       });
     });
 
-    it.skip('looks up keywords in maps', function () {
+    it('looks up keywords in maps', function () {
       return rt.loadString('(:hey {:hey "hey"})').then(function (r) {
         expect(r).to.equal('hey');
       });
@@ -212,7 +212,7 @@ describe('runtime', function () {
     });
 
     it('chains returned promises from functions', function () {
-      return rt.loadString('(let [response (zap.http/get "/base/src/zap/zap/core.zap")' +
+      return rt.loadString('(let [response (zap.http/get "base/src/zap/zap/core.zap")' +
                                   'prefixed (str "!" response)] prefixed)').then(function (string) {
         expect(string.slice(0, 5)).to.equal('!(def');
       });

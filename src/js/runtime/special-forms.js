@@ -10,7 +10,7 @@ SpecialForms.prototype.add = function (name, fn) {
 };
 
 SpecialForms.prototype.has = function (symbol) {
-  return mori.has_key(this._fns, symbol.name);
+  return !!symbol && mori.has_key(this._fns, symbol.name);
 };
 
 SpecialForms.prototype.eval = function (scope, symbol, seq) {

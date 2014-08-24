@@ -17,8 +17,6 @@ function printSingle(arg) {
     return JSON.stringify(arg);
   } else if (keyword.isInstance(arg)) {
     return arg.toString();
-  } else if (mori.is_list(arg)) {
-    return seqToString(arg, '(', ')');
   } else if (mori.is_vector(arg)) {
     return seqToString(arg, '[', ']');
   } else if (mori.is_map(arg)) {
@@ -27,6 +25,8 @@ function printSingle(arg) {
     }
     var kvs = mori.flatten(mori.seq(arg));
     return seqToString(kvs, '{', '}');
+  } else if (mori.is_collection(arg)) {
+    return seqToString(arg, '(', ')');
   } else {
     return arg.toString();
   }

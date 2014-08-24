@@ -17,7 +17,7 @@ $(ZAP_DIST):
 	mkdir -p dist
 
 js: $(BROWSERIFY) $(ZAP_DIST)
-	$(BROWSERIFY) -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
+	$(BROWSERIFY) --debug -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
 watch: $(BEEFY) $(ZAP_DIST)
 	$(BEEFY) $(ZAP_BROWSER_SRC):$(ZAP_BROWSER_DEST) --live

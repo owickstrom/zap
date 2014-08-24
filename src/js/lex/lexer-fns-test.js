@@ -109,6 +109,15 @@ describe('lex', function () {
         expect(s.text).to.equal('a?');
       });
 
+      it('allows ampersands', function () {
+        var text = '&';
+        var lexer = new Lexer(text);
+
+        var s = lexer.next();
+        expect(s.type).to.equal(Token.NAME);
+        expect(s.text).to.equal('&');
+      });
+
       it('allows a dot for method names', function () {
         var text = '.toString';
         var lexer = new Lexer(text);

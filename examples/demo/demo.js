@@ -17,7 +17,12 @@ rt.start().then(function () {
     rt.loadString(code).then(function (result) {
       repl.print(zap.printString(result), 'result');
     }, function (err) {
-      repl.print(err, 'error');
+      console.error(err);
+      if (err instanceof Error) {
+        repl.print( err.stack, 'error');
+      } else {
+        repl.print(JSON.stringify(err), 'error');
+      }
     });
   };
 });
