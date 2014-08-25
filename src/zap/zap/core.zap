@@ -1,3 +1,5 @@
+;; defs
+
 (def defmacro
   (macro [name bindings body]
          (list (quote def)
@@ -13,12 +15,21 @@
               bindings
               body)))
 
-(defn apply [f args]
-  (.apply f nil (zap->js args)))
+(defn apply
+  ([f args] (.apply f nil (zap->js args)))
+  ([f obj args] (.apply f obj (zap->js args))))
 
-(defn uppercase [s] (.toUpperCase s))
+;; meta and reflection
 
-(defn length [s] (.-length s))
+(defn meta [v] (if v (.-__meta v)))
+
+(defn doc [v] (:doc (meta v)))
+
+(defn constructor [s] (.-constructor s))
+
+(defn constructor-name [s] (.-name (.-constructor s)))
+
+;; strings
 
 (defn string?  [v] (= (type-of v) "string"))
 
@@ -29,13 +40,15 @@
   ([& strs]
    (+ (first strs) (apply str (rest strs)))))
 
-(defn meta [v] (if v (.-__meta v)))
+(defn uppercase [s] (.toUpperCase s))
 
-(defn doc [v] (:doc (meta v)))
+;; output
 
-(defn constructor [s] (.-constructor s))
+(defn println [& args] (apply (.-log js/console) js/console args))
 
-(defn constructor-name [s] (.-name (.-constructor s)))
+;; convenience functions for Javascript types
+
+(defn length [s] (.-length s))
 
 (defn parse-int [s] (.parseInt js/Number s))
 

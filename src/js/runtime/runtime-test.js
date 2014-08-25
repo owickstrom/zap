@@ -214,7 +214,7 @@ describe('runtime', function () {
     it('chains returned promises from functions', function () {
       return rt.loadString('(let [response (zap.http/get "base/src/zap/zap/core.zap")' +
                                   'prefixed (str "!" response)] prefixed)').then(function (string) {
-        expect(string.slice(0, 5)).to.equal('!(def');
+        expect(string.slice(0, 4)).to.equal('!;; ');
       });
     });
 

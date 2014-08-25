@@ -66,12 +66,8 @@ Runtime.prototype.addPreDefs = function () {
     wrapCore('type-of', function (a) {
       return typeof a;
     }),
-    wrapCore('println', function () {
-      return console.log.apply(console, arguments);
-    }),
-    wrapCore('print-string', function () {
-      return printString.apply(null, arguments);
-    }),
+    wrapCore('print-string', printString),
+
     wrapCore('aset', function (obj, prop, value) {
       if (obj === null || obj === undefined) {
         return Promise.reject('Cannot set property ' + prop + ' of ' + printString(obj));
@@ -101,6 +97,8 @@ Runtime.prototype.addPreDefs = function () {
         return Promise.reject(new Error(printString(obj) + ' does not support metadata'));
       }
     }),
+    wrapCore('*mori*', mori),
+
     // TODO: Write in zap
     wrapMori('seq', mori.seq),
     // TODO: Write in zap
