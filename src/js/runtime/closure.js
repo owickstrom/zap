@@ -3,6 +3,7 @@ var printString = require('../lang/print-string.js');
 var Symbol = require('../lang/symbol.js');
 var keyword = require('../lang/keyword.js');
 var equals = require('../lang/equals.js');
+var Promise = require('es6-promise').Promise;
 
 var ampersand = Symbol.withoutPkg('&');
 
@@ -31,15 +32,14 @@ function processArgs(seq) {
 }
 
 function expressionsToOverloads(expressions) {
-  if (m.count(expressions) % 2 !== 0) {
-    throw new Error('Invalid fn: ' + printString(expressions));
-  }
-
   var expressionPairs = expressions;
 
   // If it is not an overloaded function, wrap the args and body anyway so it
   // can be handled the same as overloaded ones.
   if (!m.is_list(m.first(expressions))) {
+    if (m.count(expressions) % 2 !== 0) {
+      throw new Error('Invalid fn: ' + printString(expressions));
+    }
     expressionPairs = m.list(expressions);
   }
 

@@ -142,7 +142,7 @@ describe('runtime', function () {
     });
 
     it('can be recursive', function () {
-      return rt.loadString('(def doall (fn [v] (if (empty? v) nil (doall (rest v)))))').then(function (last) {
+      return rt.loadString('(def doall (fn [v] (if (empty? v) nil (doall (rest v)))))').then(function () {
         return rt.loadString('(doall ["hey" "ya"])').then(function (s) {
           expect(s).to.be.null;
         });
@@ -150,9 +150,28 @@ describe('runtime', function () {
     });
 
     it('can be recursive and variadic', function () {
-      return rt.loadString('(def doall (fn ([] nil) ([& v] (apply doall (rest v)))))').then(function (last) {
+      return rt.loadString('(def doall (fn ([] nil) ([& v] (apply doall (rest v)))))').then(function () {
         return rt.loadString('(doall "hey" "ya")').then(function (s) {
           expect(s).to.be.null;
+        });
+      });
+    });
+
+    it('can be a variadic macro', function () {
+      return rt.loadString('(def infix (macro [o m & args] (cons m (cons o args))))').then(function (infix) {
+        return rt.loadString('(infix js/Number .parseInt "1")').then(function (n) {
+          expect(n).to.equal(1);
+        });
+      });
+    });
+
+    it('can be a variadic overloaded macro', function () {
+      return rt.loadString('(def infix (macro ([] nil) ([o m & args] (cons m (cons o args)))))').then(function () {
+        var int = rt.loadString('(infix js/Number .parseInt "1")');
+        var nil = rt.loadString('(infix)')
+        return Promise.all([int, nil]).then(function (vals) {
+          expect(vals[0]).to.equal(1);
+          expect(vals[1]).to.be.null;
         });
       });
     });

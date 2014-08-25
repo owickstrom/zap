@@ -1,12 +1,13 @@
 ;; defs
 
 (def defmacro
-  (macro [name bindings body]
-         (list (quote def)
-               name
-               (list (quote macro)
-                     bindings
-                     body))))
+  (macro
+    [name bindings body]
+     (list (quote def)
+           name
+           (list (quote macro)
+                 bindings
+                 body))))
 
 (defmacro defn [name bindings body]
   (list (quote def)

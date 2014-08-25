@@ -118,11 +118,17 @@ Runtime.prototype.addPreDefs = function () {
     // TODO: Write in zap
     wrapMori('empty?', mori.is_empty),
     // TODO: Write in zap
+    wrapMori('vector?', mori.is_vector),
+    // TODO: Write in zap
+    wrapMori('list?', mori.is_list),
+    // TODO: Write in zap
     wrapMori('map', mori.map),
     // TODO: Write in zap
     wrapMori('reduce', mori.reduce),
     // TODO: Write in zap
     wrapMori('filter', mori.filter),
+    // TODO: Write in zap
+    wrapMori('reverse', mori.reverse),
     // TODO: Write in zap
     wrapMori('zap->js', mori.clj_to_js),
     // TODO: Write in zap
