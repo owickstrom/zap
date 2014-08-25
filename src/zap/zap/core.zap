@@ -1,6 +1,17 @@
 ;; defs
 
-(def defmacro
+(def var (macro [symbol] (.resolve *rt symbol)))
+
+(def symbol-with-meta
+  (macro [meta symbol]
+         (list (quote with-meta) meta (list (quote quote) symbol))))
+
+(def
+  (symbol-with-meta
+    {:doc "Works like defn but creates a macro instead of a function"
+     :macro true
+     :added "0.1.0"}
+    defmacro)
   (macro
     ([name & exprs]
      (list (quote def)
@@ -22,7 +33,17 @@
 
 (defn meta [v] (if v (.-__meta v)))
 
-(defn doc [v] (:doc (meta v)))
+(defn assoc-meta [k v obj] (with-meta (assoc (meta obj) k v) obj))
+
+(def print-doc
+  (fn [meta]
+    (:doc meta)))
+
+(defmacro doc [symbol]
+  (list (quote print-doc)
+        (list (quote meta)
+              (list (quote var)
+                    symbol))))
 
 (defn constructor [s] (.-constructor s))
 

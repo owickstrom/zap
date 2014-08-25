@@ -97,7 +97,9 @@ Runtime.prototype.addPreDefs = function () {
         return Promise.reject(new Error(printString(obj) + ' does not support metadata'));
       }
     }),
-    wrapCore('*mori*', mori),
+
+    wrapCore('*rt', self),
+    wrapCore('*mori', mori),
 
     // TODO: Write in zap
     wrapMori('seq', mori.seq),
@@ -115,6 +117,8 @@ Runtime.prototype.addPreDefs = function () {
     wrapMori('conj', mori.conj),
     // TODO: Write in zap
     wrapMori('cons', mori.cons),
+    // TODO: Write in zap
+    wrapMori('assoc', mori.assoc),
     // TODO: Write in zap
     wrapMori('empty?', mori.is_empty),
     // TODO: Write in zap

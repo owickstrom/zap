@@ -13,6 +13,11 @@ Pkg.prototype.resolve = function (symbol) {
 
 Pkg.prototype.def = function (symbol, value) {
   var v = new Var(this, symbol.name, value);
+
+  if (symbol.__meta) {
+    v = v.withMeta(symbol.__meta);
+  }
+
   this.vars = mori.assoc(this.vars, symbol.name, v);
   return Promise.resolve(v);
 }

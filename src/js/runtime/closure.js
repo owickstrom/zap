@@ -120,17 +120,19 @@ function create(scope, expressions) {
   };
 
   fn.clone = function () {
-    return create(scope, expressions);
+    var c = create(scope, expressions);
+    c.__meta = fn.__meta;
+    return c;
   };
 
   var macroKey = keyword.fromString(':macro');
 
   fn.setMacro = function () {
-    fn.meta = m.assoc(fn.meta, macroKey, true);
+    fn.__meta = m.assoc(fn.__meta, macroKey, true);
   };
 
   fn.isMacro = function () {
-    var macro = m.get(fn.meta, macroKey);
+    var macro = m.get(fn.__meta, macroKey);
     return macro === true;
   };
 
@@ -141,7 +143,7 @@ function create(scope, expressions) {
   };
 
   fn.toString = function () {
-    return '(fn [multiple-overloads])';
+    return '(fn ...)';
   };
 
   return fn;

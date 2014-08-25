@@ -154,7 +154,7 @@ describe('runtime', function () {
     });
 
     it('looks up docs', function () {
-      return rt.loadString('(def stuff (with-meta {:doc "Stuff"} [:my :stuff]))').then(function () {
+      return rt.loadString('(def (symbol-with-meta {:doc "Stuff"} stuff) [:my :stuff])').then(function () {
         return rt.loadString('(doc stuff)').then(function (doc) {
           expect(doc).to.equal('Stuff');
         });

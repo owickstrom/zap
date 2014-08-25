@@ -40,6 +40,12 @@ Symbol.prototype.equals = function (other) {
   return false;
 };
 
+Symbol.prototype.withMeta = function (meta) {
+  var s = new Symbol(this.name, this.pkgName);
+  s.__meta = meta;
+  return s;
+};
+
 Symbol.withoutPkg = function (name) {
   return new Symbol(name, null);
 };

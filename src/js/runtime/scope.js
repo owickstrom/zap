@@ -28,14 +28,24 @@ specialForms.add('eval', function (scope, args) {
   });
 });
 
-// def does not eval the first argument, the symbol,
-// which is uses to create a new var in a pkg.
+// def does not eval the first argument if it's a symbol,
+// which is uses to create a new var in a pkg. If it is
+// something other than a symbol, it will be evaled.
 specialForms.add('def', function (scope, args) {
   var symbol = mori.first(args);
-  var value = mori.first(mori.rest(args));
-  var evaled = scope.eval(value);
-  return evaled.then(function (evaled) {
-    return scope.runtime.def(symbol, evaled);
+  var symbolPromise;
+  if (Symbol.isInstance(symbol)) {
+    symbolPromise = Promise.resolve(symbol);
+  } else {
+    symbolPromise = scope.eval(symbol);
+  }
+
+  return symbolPromise.then(function (symbol) {
+    var value = mori.first(mori.rest(args));
+    var evaled = scope.eval(value);
+    return evaled.then(function (evaled) {
+      return scope.runtime.def(symbol, evaled);
+    });
   });
 });
 
@@ -246,18 +256,8 @@ Scope.prototype.eval = function (form) {
 
         // Not bound in scope.
         self.runtime.resolve(form).then(function (v) {
-          if (v) {
-            // Check if it derefs.
-            if (v.deref) {
-              return resolve(v.deref());
-            } else {
-              return resolve(v);
-            }
-          } else {
-            return reject(new Error('Could not resolve symbol: ' + printString(form)));
-          }
-        }, reject);
-
+          return v.deref ? v.deref() : v;
+        }).then(resolve, reject);
       });
 
     } else if (MethodName.isInstance(form)) {
