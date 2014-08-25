@@ -156,6 +156,39 @@ readerFns[Token.COMMENT_START] = null;
 readerFns[Token.COMMENT_CONTENT] = null;
 readerFns[Token.WHITESPACE] = null;
 
+function makeReaderMacro(before, construct) {
+  return function readReaderMacro(reader) {
+    var first = readOne(reader, before);
+
+    if (first === null) {
+      return reader.unexpectedToken(first);
+    }
+
+    var token = reader.scanner.next();
+
+    if (token === null) {
+      return reader.unexpectedToken(first);
+    }
+
+    // Try to get a reader fn.
+    if (readerFns.hasOwnProperty(token.type)) {
+      var readFn = readerFns[token.type];
+
+      reader.scanner.backup();
+      var read = readFn.call(null, reader);
+
+      return construct(read);
+    } else {
+      // Throw error if no matching reader fn is found.
+      reader.unexpectedToken(token);
+    }
+  };
+}
+
+readerFns[Token.QUOTE] = makeReaderMacro(Token.QUOTE, function (inner) {
+  return m.list(Symbol.withoutPkg('quote'), inner);
+});
+
 function Reader(scanner) {
   this.scanner = scanner;
 }

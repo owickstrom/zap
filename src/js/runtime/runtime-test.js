@@ -66,8 +66,8 @@ describe('runtime', function () {
 
     it('does not resolve non-existing vars', function () {
       var symbol = Symbol.inPkg('my-string', 'my-pkg');
-      return rt.resolve(symbol).then(function (v) {
-        expect(v).to.be.null;
+      return new Promise(function (resolve, reject) {
+        rt.resolve(symbol).then(reject, resolve);
       });
     });
 
@@ -91,6 +91,12 @@ describe('runtime', function () {
 
     it('returns unevaluated data with quote', function () {
       return rt.loadString('(quote a)').then(function (keyword) {
+        expect(equals(keyword, Symbol.withoutPkg('a'))).to.be.true;
+      });
+    });
+
+    it('returns unevaluated data with the quote reader macro', function () {
+      return rt.loadString('\'a').then(function (keyword) {
         expect(equals(keyword, Symbol.withoutPkg('a'))).to.be.true;
       });
     });

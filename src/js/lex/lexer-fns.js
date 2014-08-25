@@ -50,6 +50,28 @@ exports.lexEnclosing = function lexEnclosing(lexer) {
   }
 };
 
+var readerMacros = {
+  '\'': Token.QUOTE
+};
+
+exports.lexReaderMacros = function lexReaderMacros(lexer) {
+  while (true) {
+    var c = lexer.read();
+
+    // EOF
+    if (c === null) {
+      return lexer.eof();
+    }
+
+    if (readerMacros.hasOwnProperty(c)) {
+      lexer.emit(readerMacros[c]);
+    } else {
+      lexer.backup();
+      return exports.lexWhitespace;
+    }
+  }
+};
+
 exports.lexName = function lexName(lexer) {
   var first = true;
 
@@ -80,6 +102,8 @@ exports.lexName = function lexName(lexer) {
         return exports.lexWhitespace;
       } else if (enclosing.hasOwnProperty(c)) {
         return exports.lexEnclosing;
+      } else if (readerMacros.hasOwnProperty(c)) {
+        return exports.lexReaderMacros;
       } else if (character.isQuote(c)) {
         return exports.lexStringStart;
       } else if (character.isSemicolon(c)) {

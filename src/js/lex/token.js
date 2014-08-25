@@ -12,6 +12,7 @@ Token.KEYWORD = "Keyword";
 Token.DOT = "Dot";
 Token.HYPHEN = "Hyphen";
 Token.SLASH = "Slash";
+Token.QUOTE = "Quote";
 
 Token.COMMENT_START = "CommentStart";
 Token.COMMENT_CONTENT = "CommentContent";

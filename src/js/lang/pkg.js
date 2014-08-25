@@ -1,6 +1,7 @@
 var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var Var = require('./var.js');
+var printString = require('./print-string.js');
 
 function Pkg(name) {
   this.name = name;
@@ -8,7 +9,11 @@ function Pkg(name) {
 }
 
 Pkg.prototype.resolve = function (symbol) {
-  return Promise.resolve(mori.get(this.vars, symbol.name));
+  if (mori.has_key(this.vars, symbol.name)) {
+    return Promise.resolve(mori.get(this.vars, symbol.name));
+  } else {
+    return Promise.reject(new Error('Failed to resolve symbol ' + printString(symbol)));
+  }
 }
 
 Pkg.prototype.def = function (symbol, value) {

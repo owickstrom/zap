@@ -4,7 +4,7 @@
 
 (def symbol-with-meta
   (macro [meta symbol]
-         (list (quote with-meta) meta (list (quote quote) symbol))))
+         (list 'with-meta meta (list  'quote symbol))))
 
 (def
   (symbol-with-meta
@@ -14,20 +14,20 @@
     defmacro)
   (macro defmacro
     ([name & exprs]
-     (list (quote def)
+     (list 'def
            name
-           (cons (quote macro) (cons name exprs))))))
+           (cons 'macro (cons name exprs))))))
 
 (defmacro fn [& exprs]
-  (cons (quote *fn) exprs))
+  (cons '*fn exprs))
 
 (defmacro when [test & body]
-  (list (quote if) test (cons (quote do) body)))
+  (list 'if test (cons 'do body)))
 
 (defmacro defn [name bindings body]
-  (list (quote def)
+  (list 'def
         name
-        (list (quote fn)
+        (list 'fn
               bindings
               body)))
 
@@ -46,9 +46,9 @@
     (:doc meta)))
 
 (defmacro doc [symbol]
-  (list (quote print-doc)
-        (list (quote meta)
-              (list (quote var)
+  (list 'print-doc
+        (list 'meta
+              (list 'var
                     symbol))))
 
 (defn constructor [s] (.-constructor s))
