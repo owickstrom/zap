@@ -4,7 +4,7 @@
 
 (def symbol-with-meta
   (macro [meta symbol]
-         (list 'with-meta meta (list  'quote symbol))))
+         (list 'with-meta meta (list 'quote symbol))))
 
 (def
   (symbol-with-meta
@@ -57,9 +57,9 @@
 
 ;; strings
 
-(defn string?  [v] (= (type-of v) "string"))
+(defn string? [v] (= (type-of v) "string"))
 
-(defn to-string  [v] (if (string? v) v (+ "" v)))
+(defn to-string [v] (if (string? v) v (+ "" v)))
 
 (defn str
   ([] "")
