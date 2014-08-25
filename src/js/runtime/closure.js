@@ -101,7 +101,13 @@ function createBindings(args, params, isVariadic) {
 }
 
 function create(scope, expressions) {
-  var overloads = expressionsToOverloads(expressions);
+
+  var first = m.first(expressions);
+  var firstIsName = Symbol.isInstance(first);
+  var name = firstIsName ? first.name : null;
+
+  var overloads = expressionsToOverloads(
+    firstIsName ? m.rest(expressions) : expressions);
 
   var fn = function () {
     var params = m.prim_seq(arguments);
@@ -143,6 +149,9 @@ function create(scope, expressions) {
   };
 
   fn.toString = function () {
+    if (name) {
+      return '(fn ' + name  + ' ...)';
+    }
     return '(fn ...)';
   };
 

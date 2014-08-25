@@ -61,7 +61,7 @@ specialForms.add('let', function (scope, args) {
 });
 //
 // fn creates a closure.
-specialForms.add('fn', function (scope, args) {
+specialForms.add('*fn', function (scope, args) {
   return closure.create(scope, args);
 });
 

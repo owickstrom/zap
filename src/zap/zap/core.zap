@@ -12,11 +12,14 @@
      :macro true
      :added "0.1.0"}
     defmacro)
-  (macro
+  (macro defmacro
     ([name & exprs]
      (list (quote def)
            name
-           (cons (quote macro) exprs)))))
+           (cons (quote macro) (cons name exprs))))))
+
+(defmacro fn [& exprs]
+  (cons (quote *fn) exprs))
 
 (defmacro when [test & body]
   (list (quote if) test (cons (quote do) body)))
