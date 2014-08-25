@@ -17,7 +17,7 @@ rt.start().then(function () {
     rt.loadString(code).then(function (result) {
       repl.print(zap.printString(result), 'result');
     }, function (err) {
-      console.error(err);
+      console.error(err.message, err.stack);
       if (err instanceof Error) {
         repl.print( err.stack, 'error');
       } else {

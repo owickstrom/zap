@@ -97,6 +97,16 @@ specialForms.add('macro', function (scope, args) {
   return c;
 });
 
+// macroexpand runs a macro and returns the output data structure without
+// evaluating it.
+specialForms.add('macroexpand', function (scope, args) {
+  if (mori.count(args) !== 1) {
+    return Promise.reject(new Error('macroexpand takes exactly on argument'));
+  }
+
+  return scope.macroexpand(mori.first(args));
+});
+
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
   this._values = values;
@@ -193,14 +203,13 @@ Scope.prototype.eval = function (form) {
 
       self.eval(first).then(function (fn) {
         if (!fn.apply) {
-          return reject(printString(fn) + ' is not a fn');
+          return reject(new Error(printString(fn) + ' is not a fn'));
         }
 
         if (!!fn.isMacro && fn.isMacro()) {
-          var params = mori.into_array(mori.rest(seq));
-          fn.apply(null, params).then(function (expanded) {
-            self.eval(expanded).then(resolve, reject);
-          }, reject);
+          return self.macroexpand(seq).then(function (expanded) {
+            return self.eval(expanded).then(resolve, reject);
+          });
 
         } else {
           var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
@@ -260,5 +269,14 @@ Scope.prototype.eval = function (form) {
     }
   });
 };
+
+Scope.prototype.macroexpand = function (seq) {
+  var self = this;
+  return self.eval(mori.first(seq)).then(function (macro) {
+    var params = mori.into_array(mori.rest(seq));
+    return macro.apply(null, params);
+  });
+};
+
 
 module.exports = Scope;

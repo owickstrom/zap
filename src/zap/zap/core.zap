@@ -2,12 +2,10 @@
 
 (def defmacro
   (macro
-    [name bindings body]
+    ([name & exprs]
      (list (quote def)
            name
-           (list (quote macro)
-                 bindings
-                 body))))
+           (cons (quote macro) exprs)))))
 
 (defmacro defn [name bindings body]
   (list (quote def)
