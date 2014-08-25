@@ -107,6 +107,24 @@ specialForms.add('macro', function (scope, args) {
   return c;
 });
 
+// do evaluates all expressions sequentially (using Promise.then) and
+// returns the Promise returned by the last expression.
+specialForms.add('do', function (scope, args) {
+  function evalNext(exprs) {
+    var count = mori.count(exprs);
+    if (count === 0) {
+      return null;
+    } else if (count === 1) {
+      return scope.eval(mori.first(exprs));
+    } else {
+      return scope.eval(mori.first(exprs)).then(function () {
+        return evalNext(mori.rest(exprs));
+      });
+    }
+  }
+  return evalNext(args);
+});
+
 // macroexpand runs a macro and returns the output data structure without
 // evaluating it.
 specialForms.add('macroexpand', function (scope, args) {
@@ -212,7 +230,7 @@ Scope.prototype.eval = function (form) {
       }
 
       self.eval(first).then(function (fn) {
-        if (!fn.apply) {
+        if (!fn || !fn.apply) {
           return reject(new Error(printString(fn) + ' is not a fn'));
         }
 
@@ -256,7 +274,7 @@ Scope.prototype.eval = function (form) {
 
         // Not bound in scope.
         self.runtime.resolve(form).then(function (v) {
-          return v.deref ? v.deref() : v;
+          return !!v && v.deref ? v.deref() : v;
         }).then(resolve, reject);
       });
 

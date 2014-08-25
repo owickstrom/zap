@@ -225,6 +225,25 @@ describe('runtime', function () {
       });
     });
 
+    it('evals multiple expressions in a do', function () {
+      window.arr = [];
+      return rt.loadString('(do (.push js/arr "he") (.push js/arr "llo"))').then(function () {
+        expect(window.arr).to.deep.equal(['he', 'llo']);
+      });
+    });
+
+    it('returns the last expression in a do', function () {
+      return rt.loadString('(do (str :hey) (str :ya))').then(function (s) {
+        expect(s).to.equal(':ya');
+      });
+    });
+
+    it('returns nil for an empty do', function () {
+      return rt.loadString('(do)').then(function (s) {
+        expect(s).to.be.null;
+      });
+    });
+
     describe('if', function () {
 
       it('returns the first expression if true', function () {

@@ -18,6 +18,9 @@
            name
            (cons (quote macro) exprs)))))
 
+(defmacro when [test & body]
+  (list (quote if) test (cons (quote do) body)))
+
 (defmacro defn [name bindings body]
   (list (quote def)
         name
@@ -31,7 +34,7 @@
 
 ;; meta and reflection
 
-(defn meta [v] (if v (.-__meta v)))
+(defn meta [v] (when v (.-__meta v)))
 
 (defn assoc-meta [k v obj] (with-meta (assoc (meta obj) k v) obj))
 
