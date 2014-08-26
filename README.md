@@ -20,10 +20,7 @@ Some of the supported stuff right now...
 ;; functions
 ((fn [a] (uppercase a)) "hello")
 
-;; macros
-(defmacro when [condition body] (list (quote if) condition body))
-
-;; metadata (on data structures and fns so far...)
+;; metadata (on data structures, fns, symbols and vars so far...)
 (def identity (with-meta {:doc "Returns its argument."} (fn [a] a)))
 
 ;; javascript interop
@@ -36,10 +33,21 @@ Some of the supported stuff right now...
 ;; method invocation
 (def shout (fn [s] (str (.toUpperCase s) "!")))
 
+;; defining functions
+(defn shout [s] (str s "!!!"))
+
+;; macros
+(defmacro when
+ "This is like an if expression without the else clause."
+ [condition body] (list 'if condition (cons 'do body)))
+
 ;; async execution (any expression can return a promise)
 (let [r (zap.http/get "http://some.url.net")
       title (get-title r)]
   (println "The title is" title))
+
+;; docs for a symbol
+(doc defn)
 ```
 
 ## Prerequisites
