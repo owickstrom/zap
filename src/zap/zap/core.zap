@@ -28,7 +28,7 @@
   (cons '*fn exprs))
 
 (defmacro when
-  "Evaluates bodies in a `do` if test evaluates to a thruthy value."
+  "Evaluates bodies in a `do` if test evaluates to a truthy value."
   [test & bodies] (list 'if test (cons 'do bodies)))
 
 (defmacro defn
