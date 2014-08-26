@@ -95,6 +95,12 @@ describe('runtime', function () {
       });
     });
 
+    it('quotes function arguments ', function () {
+      return rt.loadString('(print-string \'a)').then(function (a) {
+        expect(a).to.equal('a');
+      });
+    });
+
     it('returns unevaluated data with the quote reader macro', function () {
       return rt.loadString('\'a').then(function (keyword) {
         expect(equals(keyword, Symbol.withoutPkg('a'))).to.be.true;

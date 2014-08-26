@@ -237,7 +237,7 @@ Scope.prototype.eval = function (form) {
         if (!!fn.isMacro && fn.isMacro()) {
           return self.macroexpand(seq).then(function (expanded) {
             return self.eval(expanded).then(resolve, reject);
-          });
+          }, reject);
 
         } else {
           var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));

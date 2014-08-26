@@ -224,7 +224,7 @@ Runtime.prototype.evalForms = function (forms) {
       self.evalForms(mori.rest(forms)).then(function (restEvaled) {
         resolve(mori.cons(evaled, restEvaled));
       }, reject);
-    });
+    }, reject);
   });
 };
 

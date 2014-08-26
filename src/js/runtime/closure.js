@@ -118,9 +118,8 @@ function create(scope, expressions) {
     }
 
     var bindings = createBindings(overload.args, params, overload.isVariadic);
-    var evalArgs = !fn.isMacro();
 
-    return scope.wrap(bindings, evalArgs).then(function (scope) {
+    return scope.wrap(bindings, false).then(function (scope) {
       return scope.eval(overload.body);
     });
   };
