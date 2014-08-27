@@ -20,7 +20,7 @@ function printError(err) {
 }
 
 rt.start().then(function () {
-  repl.print(';; welcome to zap!', 'message');
+  repl.print(';; Welcome to the Zap REPL. To get up and running, go to "Help".', 'message');
 
   repl.eval = function (code) {
     rt.loadString(code).then(function (result) {
