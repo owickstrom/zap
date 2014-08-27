@@ -10,8 +10,13 @@
   (symbol-with-meta
     {:doc "Creates a function closure."}
     fn)
-  (with-meta {:macro true}
-             (*fn [& exprs] (cons '*fn exprs))))
+  (.setMacro (*fn [& exprs] (cons '*fn exprs))))
+
+(def
+  (symbol-with-meta
+    {:doc "Creates a macro."}
+    macro)
+  (.setMacro (fn [& exprs] (list '.setMacro (cons 'fn exprs)))))
 
 (def
   (symbol-with-meta
@@ -19,18 +24,15 @@
      :macro true
      :added "0.1.0"}
     defmacro)
-  (.setMacro
-    (fn defmacro
-      ([name & exprs]
-       (if (= (type-of (first exprs)) "string")
-         (list 'def
-               (with-meta {:doc (first exprs)} name)
-               (list '.setMacro
-                     (cons 'fn (cons name (rest exprs)))))
-         (list 'def
-               name
-               (list '.setMacro
-                     (cons 'fn (cons name exprs)))))))))
+  (macro defmacro
+         ([name & exprs]
+          (if (= (type-of (first exprs)) "string")
+            (list 'def
+                  (with-meta {:doc (first exprs)} name)
+                  (cons 'macro (cons name (rest exprs))))
+            (list 'def
+                  name
+                  (cons 'macro (cons name exprs)))))))
 
 (defmacro when
   "Evaluates bodies in a `do` if test evaluates to a truthy value."
