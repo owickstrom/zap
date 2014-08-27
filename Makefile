@@ -32,9 +32,7 @@ build-gh-pages: js copy-sources
 deploy-gh-pages: build-gh-pages
 	git checkout gh-pages
 	git add -f index.html dist
-	git commit -m "Deploy to gh-pages at $(shell date)"
-	git rebase master
-	git push origin gh-pages
+	(git commit -m "Deploy to gh-pages at $(shell date)" && git rebase master && git push origin +gh-pages) || echo "Nothing has changed!"
 
 watch: $(BEEFY) $(ZAP_DIST)
 	$(BEEFY) $(ZAP_BROWSER_SRC):$(ZAP_BROWSER_DEST) --live
