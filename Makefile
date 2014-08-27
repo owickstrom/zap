@@ -31,7 +31,9 @@ build-gh-pages: js copy-sources
 	sed -e "s/\\.\\//dist\\//" gh-pages/index.html  > index.html
 
 deploy-gh-pages: build-gh-pages
+	git stash
 	git checkout gh-pages
+	git stash pop
 	git add -f index.html dist
 	(git commit -m "Deploy to gh-pages at $(shell date)" && git rebase master && git push origin +gh-pages) || echo "Nothing has changed!"
 
