@@ -5,7 +5,7 @@ ZAP_DIST = dist
 ZAP_BROWSER_SRC = src/js/zap-browser.js
 ZAP_BROWSER_DEST = dist/zap-browser.js
 
-all: build-dist
+all: js
 
 $(BEEFY):
 	npm install
@@ -22,8 +22,18 @@ js-debug: $(BROWSERIFY) $(ZAP_DIST)
 js: $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
-build-dist: js
+copy-sources:
 	cp -r src/zap dist/zap
+	cp -r gh-pages/** dist/
+
+build-gh-pages: js copy-sources
+	sed -e "s/\\.\\//dist\\//" gh-pages/index.html  > index.html
+
+deploy-gh-pages: build-gh-pages
+	git stash
+	git checkout gh-pages
+	git add index.html dist
+	git commit -m "Deploy to gh-pages at $(date)"
 
 watch: $(BEEFY) $(ZAP_DIST)
 	$(BEEFY) $(ZAP_BROWSER_SRC):$(ZAP_BROWSER_DEST) --live

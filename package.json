@@ -7,10 +7,6 @@
   "engines": {
     "node": "0.10.x"
   },
-  "scripts": {
-    "postinstall": "mkdir -p dist && cp -r src/zap dist/zap && node_modules/.bin/browserify -s zap src/js/zap-browser.js > dist/zap-browser.js",
-    "start": "node server.js"
-  },
   "repository": {
     "type": "git",
     "url": "git://github.com/owickstrom/zap.git"
@@ -23,8 +19,7 @@
   "homepage": "https://github.com/owickstrom/zap",
   "dependencies": {
     "browserify": "~4",
-    "mori": "~0.2.9",
-    "express": "~4.8.5"
+    "mori": "~0.2.9"
   },
   "devDependencies": {
     "browserify": "~4",
