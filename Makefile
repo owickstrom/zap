@@ -19,11 +19,13 @@ $(ZAP_DIST):
 js-debug: $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) --debug -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
-js: $(BROWSERIFY) $(ZAP_DIST)
+clean-dist:
+	rm -r dist/**
+
+js: clean-dist $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
-copy-sources:
-	rm -r dist/**
+copy-sources: clean-dist
 	cp -r src/zap dist/zap
 	cp -r gh-pages/** dist/
 
