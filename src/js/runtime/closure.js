@@ -134,6 +134,7 @@ function create(scope, expressions) {
 
   fn.setMacro = function () {
     fn.__meta = m.assoc(fn.__meta, macroKey, true);
+    return fn;
   };
 
   fn.isMacro = function () {

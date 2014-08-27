@@ -158,7 +158,7 @@ describe('runtime', function () {
     });
 
     it('can be a variadic macro', function () {
-      return rt.loadString('(def infix (macro [o m & args] (cons m (cons o args))))').then(function (infix) {
+      return rt.loadString('(defmacro infix [o m & args] (cons m (cons o args)))').then(function (infix) {
         return rt.loadString('(infix js/Number .parseInt "1")').then(function (n) {
           expect(n).to.equal(1);
         });
@@ -166,7 +166,7 @@ describe('runtime', function () {
     });
 
     it('can be a variadic overloaded macro', function () {
-      return rt.loadString('(def infix (macro ([] nil) ([o m & args] (cons m (cons o args)))))').then(function () {
+      return rt.loadString('(defmacro infix ([] nil) ([o m & args] (cons m (cons o args))))').then(function () {
         var int = rt.loadString('(infix js/Number .parseInt "1")');
         var nil = rt.loadString('(infix)')
         return Promise.all([int, nil]).then(function (vals) {

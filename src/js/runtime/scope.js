@@ -99,14 +99,6 @@ specialForms.add('if', function (scope, args) {
   });
 });
 
-// macro creates a fn that does not eval it's arguments, it just transforms
-// it as data.
-specialForms.add('macro', function (scope, args) {
-  var c = closure.create(scope, args);
-  c.setMacro();
-  return c;
-});
-
 // do evaluates all expressions sequentially (using Promise.then) and
 // returns the Promise returned by the last expression.
 specialForms.add('do', function (scope, args) {

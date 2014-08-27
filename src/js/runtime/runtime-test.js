@@ -215,8 +215,8 @@ describe('runtime', function () {
       });
     });
 
-    it('creates macros with macro', function () {
-      return rt.loadString('(def flip (macro [a b] (list b a)))').then(function () {
+    it('creates macros with defmacro', function () {
+      return rt.loadString('(defmacro flip [a b] (list b a))').then(function () {
         return rt.loadString('(flip "hello" string?)').then(function (isString) {
           expect(isString).to.be.true;
         });
