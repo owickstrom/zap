@@ -33,7 +33,7 @@ deploy-gh-pages: build-gh-pages
 	git stash
 	git checkout gh-pages
 	git add -f index.html dist
-	git commit -m "Deploy to gh-pages at $(date)"
+	git commit -m "Deploy to gh-pages at $(shell date)"
 
 watch: $(BEEFY) $(ZAP_DIST)
 	$(BEEFY) $(ZAP_BROWSER_SRC):$(ZAP_BROWSER_DEST) --live
