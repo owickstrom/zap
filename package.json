@@ -8,7 +8,7 @@
     "node": "0.10.x"
   },
   "scripts": {
-    "postinstall": "make",
+    "postinstall": "mkdir -p dist && cp -r src/zap dist/zap && node_modules/.bin/browserify -s zap src/js/zap-browser.js > dist/zap-browser.js",
     "start": "node server.js"
   },
   "repository": {
