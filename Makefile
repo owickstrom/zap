@@ -23,6 +23,7 @@ js: $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
 copy-sources:
+	rm -r dist/**
 	cp -r src/zap dist/zap
 	cp -r gh-pages/** dist/
 
