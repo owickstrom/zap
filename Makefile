@@ -32,7 +32,7 @@ build-gh-pages: js copy-sources
 deploy-gh-pages: build-gh-pages
 	git stash
 	git checkout gh-pages
-	git add index.html dist
+	git add -f index.html dist
 	git commit -m "Deploy to gh-pages at $(date)"
 
 watch: $(BEEFY) $(ZAP_DIST)
