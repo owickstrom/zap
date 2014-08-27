@@ -4,7 +4,13 @@
   "description": "A LISP runtime in Javascript",
   "main": "dist/zap-node.js",
   "directories": {},
-  "scripts": {},
+  "engines": {
+    "node": "0.10.x"
+  },
+  "scripts": {
+    "postinstall": "make dist",
+    "start": "node server.js"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/owickstrom/zap.git"
@@ -16,7 +22,8 @@
   },
   "homepage": "https://github.com/owickstrom/zap",
   "dependencies": {
-    "mori": "~0.2.9"
+    "mori": "~0.2.9",
+    "express": "~4.8.5"
   },
   "devDependencies": {
     "browserify": "~4",

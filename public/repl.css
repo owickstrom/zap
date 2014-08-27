@@ -13,7 +13,7 @@ h1 {
   padding: .5em 1em;
   background: #333;
   font-size: 100%;
-  color: #ccc;
+  color: #777;
   text-align: center;
   font-weight: 400;
 }
@@ -33,4 +33,10 @@ h1 {
 .cm-s-tomorrow-night-eighties .CodeMirror-gutters,
 .cm-s-tomorrow-night-eighties.CodeMirror {
   background: #222;
+}
+.cm-s-tomorrow-night-eighties.CodeMirror .CodeMirror-cursor {
+  width: 8px;
+  border: none !important;
+  background: transparent;
+  background: rgba(255,255,255,.5);
 }
