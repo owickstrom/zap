@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/owickstrom/zap",
   "dependencies": {
-    "mori": "~0.2.9",
+    "browserify": "~4",
     "express": "~4.8.5"
   },
   "devDependencies": {
