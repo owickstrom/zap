@@ -19,8 +19,8 @@ $(ZAP_DIST):
 js-debug: $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) --debug -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
-clean-dist:
-	rm -r dist/**
+clean-dist: dist
+	rm -rf dist/**
 
 js: clean-dist $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
@@ -30,7 +30,8 @@ copy-sources: clean-dist
 	cp -r gh-pages/** dist/
 
 build-gh-pages: js copy-sources
-	sed -e "s/\\.\\//dist\\//" gh-pages/index.html  > index.html
+	sed -e "s/\"\\.\\//\"dist\\//" gh-pages/index.html > index.html
+	sed -e "s/\\.\\.\\/src/dist\\//" gh-pages/repl.js  > dist/repl.js
 
 watch: $(BEEFY) $(ZAP_DIST)
-	$(BEEFY) $(ZAP_BROWSER_SRC):$(ZAP_BROWSER_DEST) --live
+	$(BEEFY) gh-pages $(ZAP_BROWSER_SRC):zap-browser.js -s zap --live
