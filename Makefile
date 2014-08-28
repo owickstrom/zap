@@ -34,4 +34,4 @@ clean:
 	rm -rf dist index.html
 
 watch: $(BEEFY) $(ZAP_DIST)
-	$(BEEFY) gh-pages $(ZAP_BROWSER_SRC):zap-browser.js -s zap --live
+	$(BEEFY) $(ZAP_BROWSER_SRC):zap-browser.js --live --cwd gh-pages -- -s zap
