@@ -5,7 +5,7 @@ ZAP_DIST = dist
 ZAP_BROWSER_SRC = src/js/zap-browser.js
 ZAP_BROWSER_DEST = dist/zap-browser.js
 
-all: js
+all: index.html
 
 $(BEEFY):
 	npm install
@@ -15,23 +15,23 @@ $(BROWSERIFY):
 
 $(ZAP_DIST):
 	mkdir -p dist
-
-js-debug: $(BROWSERIFY) $(ZAP_DIST)
-	$(BROWSERIFY) --debug -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
-
-clean-dist: dist
 	rm -rf dist/**
 
-js: clean-dist $(BROWSERIFY) $(ZAP_DIST)
+$(ZAP_BROWSER_DEST): dist $(BROWSERIFY) $(ZAP_DIST)
 	$(BROWSERIFY) -s zap $(ZAP_BROWSER_SRC) > $(ZAP_BROWSER_DEST)
 
-copy-sources: clean-dist
+dist/zap: dist
 	cp -r src/zap dist/zap
+
+dist/repl.js: dist
 	cp -r gh-pages/** dist/
 
-build-gh-pages: js copy-sources
+index.html: $(ZAP_BROWSER_DEST) dist/zap dist/repl.js
 	sed -e "s/\"\\.\\//\"dist\\//" gh-pages/index.html > index.html
 	sed -e "s/\\.\\.\\/src/dist\\//" gh-pages/repl.js  > dist/repl.js
+
+clean:
+	rm -rf dist index.html
 
 watch: $(BEEFY) $(ZAP_DIST)
 	$(BEEFY) gh-pages $(ZAP_BROWSER_SRC):zap-browser.js -s zap --live
