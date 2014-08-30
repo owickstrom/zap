@@ -35,6 +35,7 @@ Lexer.prototype._currentPosition = function () {
 
 Lexer.prototype.read = function () {
   if (this.input.length <= this.end) {
+    this.end += 1;
     return null;
   }
 
@@ -55,6 +56,9 @@ Lexer.prototype.read = function () {
 };
 
 Lexer.prototype.backup = function () {
+  if (this.end <= this.start) {
+    throw new Error('Cannot backup more than have been read since last emit');
+  }
   this.positions.pop();
   this.end -= 1;
 };

@@ -30,6 +30,10 @@ Token.RIGHT_BRACKET = "RightBracket";
 Token.LEFT_CURLY_BRACKET = "LeftCurlyBracket";
 Token.RIGHT_CURLY_BRACKET = "RightCurlyBracket";
 
+Token.NUMBER_SIGN_PREFIX = "NumberSignPrefix";
+Token.NUMBER_INTEGER = "NumberInteger";
+Token.NUMBER_DECIMALS = "NumberDecimals";
+
 Token.WHITESPACE = "Whitespace";
 Token.EOF = "EOF";
 Token.ERROR = "Error";
