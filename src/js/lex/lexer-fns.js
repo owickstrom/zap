@@ -12,7 +12,7 @@ exports.lexWhitespace = function lexWhitespace(lexer) {
         lexer.emitIfNotBlank(Token.WHITESPACE);
         return lexer.eof();
       } else {
-        lexer.backup()
+        lexer.backup();
       }
 
       lexer.emitIfNotBlank(Token.WHITESPACE);
@@ -72,6 +72,14 @@ exports.lexReaderMacros = function lexReaderMacros(lexer) {
   }
 };
 
+function charactersShouldBeLexedAsNumber(c, c2) {
+  if (c === '+' || c === '-') {
+    return character.isDigit(c2);
+  } else {
+    return character.isDigit(c);
+  }
+}
+
 exports.lexName = function lexName(lexer) {
   var first = true;
 
@@ -81,7 +89,7 @@ exports.lexName = function lexName(lexer) {
     if (first) {
       var c2 = lexer.peek();
 
-      if (character.isValidFirstTwoCharactersInNumber(c, c2)) {
+      if (charactersShouldBeLexedAsNumber(c, c2)) {
         lexer.backup();
         return exports.lexNumberSignPrefix;
       } else if (character.isDigit(c)) {
@@ -264,7 +272,7 @@ exports.lexNumberSignPrefix = function lexNumberSignPrefix(lexer) {
     return exports.lexNumberInteger;
   } else {
     lexer.backup();
-    return lex.unexpectedCharacter(c);
+    return exports.lexWhitespace;
   }
 };
 
@@ -290,6 +298,8 @@ exports.lexNumberInteger = function lexNumberInteger(lexer) {
       lexer.emit(Token.DOT);
 
       return exports.lexNumberDecimals;
+    } else if (character.isValidNameCharacter(c)) {
+      return lexer.unexpectedCharacter(c);
     } else {
       lexer.backup();
       lexer.emitIfNotBlank(Token.NUMBER_INTEGER);

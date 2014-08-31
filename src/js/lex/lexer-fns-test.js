@@ -449,6 +449,39 @@ describe('lex', function () {
         expect(d.text).to.equal('456');
       });
 
+      it('lexes integer in list', function () {
+        var lexer = new Lexer('(123)');
+
+        expect(lexer.next().type).to.equal(Token.LEFT_PARENTHESIS);
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('123');
+
+        expect(lexer.next().type).to.equal(Token.RIGHT_PARENTHESIS);
+      });
+
+      it('lexes integers after plus name in list', function () {
+        var lexer = new Lexer('(+ 1 2)');
+
+        expect(lexer.next().type).to.equal(Token.LEFT_PARENTHESIS);
+
+        expect(lexer.next().type).to.equal(Token.NAME);
+        expect(lexer.next().type).to.equal(Token.WHITESPACE);
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('1');
+
+        expect(lexer.next().type).to.equal(Token.WHITESPACE);
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('2');
+
+        expect(lexer.next().type).to.equal(Token.RIGHT_PARENTHESIS);
+      });
+
     });
 
   });

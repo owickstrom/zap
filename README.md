@@ -5,8 +5,24 @@
 Some of the supported stuff right now...
 
 ```clojure
+;; strings
+"hello"
+
+;; basic numbers (extended syntax is planned)
+123
+345.546
++1
+-5.9
+
+;; keywords
+:hey
+:keywords-are-cool
+
 ;; quote
 (quote some-symbol)
+
+;; quote reader macro
+'some-symbol
 
 ;; eval
 (eval (quote some-symbol))

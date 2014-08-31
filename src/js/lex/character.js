@@ -32,12 +32,6 @@ var character = {
   isValidNameCharacter: function (c) {
     return character.isAlphaNumeric(c) || validNonAlphaNumeric.indexOf(c) !== -1;
   },
-  isValidFirstTwoCharactersInNumber: function (c, c2) {
-      return (character.isDigit(c) ||
-      c === '-' ||
-      c === '+') &&
-      character.isDigit(c2);
-  },
   isColon: function (c) {
     return c === ':';
   },
