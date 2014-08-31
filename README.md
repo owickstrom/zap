@@ -1,5 +1,21 @@
 # Zap
 
+Zap is a small functional LISP, inspired by Clojure and ClojureScript, that's
+built primarily for running in a web browser. Due to the asynchronous nature
+of Javascript programming Zap has continuations built right in at it's core.
+
+Zap interprets (reads and evaluates) the Zap code in the browser instead of
+compiling to Javascript in a build step. Hopefully this will make it less complex
+to set up a REPL connection between the browser and editor.
+
+Also note that this is kind of a one man show right now - a small hobby project
+spawned from my discomfort with the suggested toolchain of ClojureScript, Clojure,
+Leiningen, nrepl, Cider, etc.
+
+However, if you are interested in contributing to the project, please file bugs
+or feature requests as issues here on Github and send pull requests if you have
+any fixes.
+
 ## The Language
 
 Some of the supported stuff right now...
