@@ -369,5 +369,120 @@ describe('lex', function () {
 
     });
 
+    describe('lexNumber', function () {
+
+      it('lexes negative number sign', function () {
+        var lexer = new Lexer('-1');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_SIGN_PREFIX);
+        expect(t.text).to.equal('-');
+      });
+
+      it('lexes positive number sign', function () {
+        var lexer = new Lexer('+1');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_SIGN_PREFIX);
+        expect(t.text).to.equal('+');
+      });
+
+      it('lexes positive number sign as name if not followed by integer', function () {
+        var lexer = new Lexer('+ ');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NAME);
+        expect(t.text).to.equal('+');
+      });
+
+      it('lexes negative number sign as name if not followed by integer', function () {
+        var lexer = new Lexer('- ');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NAME);
+        expect(t.text).to.equal('-');
+      });
+
+      it('lexes integer', function () {
+        var lexer = new Lexer('123');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('123');
+      });
+
+      it('lexes integer with sign prefix', function () {
+        var lexer = new Lexer('-123');
+
+        var p = lexer.next();
+        expect(p.type).to.equal(Token.NUMBER_SIGN_PREFIX);
+        expect(p.text).to.equal('-');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('123');
+      });
+
+      it('lexes integer with sign prefix', function () {
+        var lexer = new Lexer('-123');
+
+        var p = lexer.next();
+        expect(p.type).to.equal(Token.NUMBER_SIGN_PREFIX);
+        expect(p.text).to.equal('-');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('123');
+      });
+
+      it('lexes integer and decimals', function () {
+        var lexer = new Lexer('123.456');
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('123');
+
+        expect(lexer.next().type).to.equal(Token.DOT);
+
+        var d = lexer.next();
+        expect(d.type).to.equal(Token.NUMBER_DECIMALS);
+        expect(d.text).to.equal('456');
+      });
+
+      it('lexes integer in list', function () {
+        var lexer = new Lexer('(123)');
+
+        expect(lexer.next().type).to.equal(Token.LEFT_PARENTHESIS);
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('123');
+
+        expect(lexer.next().type).to.equal(Token.RIGHT_PARENTHESIS);
+      });
+
+      it('lexes integers after plus name in list', function () {
+        var lexer = new Lexer('(+ 1 2)');
+
+        expect(lexer.next().type).to.equal(Token.LEFT_PARENTHESIS);
+
+        expect(lexer.next().type).to.equal(Token.NAME);
+        expect(lexer.next().type).to.equal(Token.WHITESPACE);
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('1');
+
+        expect(lexer.next().type).to.equal(Token.WHITESPACE);
+
+        var t = lexer.next();
+        expect(t.type).to.equal(Token.NUMBER_INTEGER);
+        expect(t.text).to.equal('2');
+
+        expect(lexer.next().type).to.equal(Token.RIGHT_PARENTHESIS);
+      });
+
+    });
+
   });
 });

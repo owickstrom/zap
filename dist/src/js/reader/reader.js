@@ -147,6 +147,50 @@ function readString(reader) {
 };
 readerFns[Token.STRING_START] = readString;
 
+function readNumber(reader) {
+  var prefix, integer, decimals, last;
+
+  while (true) {
+    var t = reader.scanner.next();
+
+    if (t === null || t.type === Token.EOF || t.type === Token.WHITESPACE) {
+      break;
+    } else {
+      if (t.type === Token.NUMBER_SIGN_PREFIX) {
+        prefix = t;
+      } else if (t.type === Token.NUMBER_INTEGER) {
+        integer = t;
+      } else if (t.type === Token.NUMBER_DECIMALS) {
+        decimals = t;
+      } else if (t.type !== Token.DOT) {
+        reader.scanner.backup();
+        break;
+      }
+      // Store this to be able to report correct location of unexpected token.
+      last = t;
+    }
+
+  }
+
+  var s = '';
+
+  if (prefix) {
+    s += prefix.text;
+  }
+
+  if (integer) {
+    s += integer.text;
+  }
+
+  if (decimals) {
+    return parseFloat(s + '.' + decimals.text);
+  } else {
+    return parseInt(s);
+  }
+};
+readerFns[Token.NUMBER_SIGN_PREFIX] = readNumber;
+readerFns[Token.NUMBER_INTEGER] = readNumber;
+
 readerFns[Token.KEYWORD] = readSimple(Token.KEYWORD, function (token) {
   return keyword.fromString(token.text);
 });

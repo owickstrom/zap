@@ -56,6 +56,24 @@ describe('reader', function () {
       expect(equals(read, "hello")).to.be.true;
     });
 
+    it('reads integer numbers', function () {
+      var read = Reader.readString('123');
+
+      expect(read).to.equal(123);
+    });
+
+    it('reads float numbers', function () {
+      var read = Reader.readString('123');
+
+      expect(read).to.equal(123);
+    });
+
+    it('reads numbers in lists', function () {
+      var read = Reader.readString('(+ 1 2)');
+
+      expect(equals(read, m.list(Symbol.withoutPkg('+'), 1, 2))).to.be.true;
+    });
+
     it('reads strings with escaped characters', function () {
       var read = Reader.readString('"\\n"');
 

@@ -12,7 +12,7 @@ exports.lexWhitespace = function lexWhitespace(lexer) {
         lexer.emitIfNotBlank(Token.WHITESPACE);
         return lexer.eof();
       } else {
-        lexer.backup()
+        lexer.backup();
       }
 
       lexer.emitIfNotBlank(Token.WHITESPACE);
@@ -72,6 +72,14 @@ exports.lexReaderMacros = function lexReaderMacros(lexer) {
   }
 };
 
+function charactersShouldBeLexedAsNumber(c, c2) {
+  if (c === '+' || c === '-') {
+    return character.isDigit(c2);
+  } else {
+    return character.isDigit(c);
+  }
+}
+
 exports.lexName = function lexName(lexer) {
   var first = true;
 
@@ -79,11 +87,15 @@ exports.lexName = function lexName(lexer) {
     var c = lexer.read();
 
     if (first) {
-      if (character.isDigit(c)) {
-        return lexer.error('Illegal starting character: ' + c);
+      var c2 = lexer.peek();
+
+      if (charactersShouldBeLexedAsNumber(c, c2)) {
+        lexer.backup();
+        return exports.lexNumberSignPrefix;
+      } else if (character.isDigit(c)) {
+        return lexer.unexpectedCharacter(c);
       }
     }
-
     if (!character.isValidNameCharacter(c)) {
 
       // EOF
@@ -242,5 +254,75 @@ exports.lexStringEnd = function lexStringEnd(lexer) {
     return exports.lexWhitespace;
   } else {
     return lexer.unexpectedCharacter(c)
+  }
+};
+
+exports.lexNumberSignPrefix = function lexNumberSignPrefix(lexer) {
+  var c = lexer.read();
+
+  if (c === null) {
+    return lexer.eof();
+  }
+
+  if (c === '-' || c === '+') {
+    lexer.emit(Token.NUMBER_SIGN_PREFIX);
+    return exports.lexNumberInteger;
+  } else if (character.isDigit(c)) {
+    lexer.backup();
+    return exports.lexNumberInteger;
+  } else {
+    lexer.backup();
+    return exports.lexWhitespace;
+  }
+};
+
+exports.lexNumberInteger = function lexNumberInteger(lexer) {
+  while (true) {
+    var c = lexer.read();
+
+    if (c === null) {
+      lexer.emitIfNotBlank(Token.NUMBER_INTEGER);
+      return lexer.eof();
+    }
+
+    if (character.isDigit(c)) {
+      continue;
+    } else if (c === '.') {
+
+      // First emit integer part.
+      lexer.backup();
+      lexer.emitIfNotBlank(Token.NUMBER_INTEGER);
+
+      // Re-read dot and emit.
+      lexer.read();
+      lexer.emit(Token.DOT);
+
+      return exports.lexNumberDecimals;
+    } else if (character.isValidNameCharacter(c)) {
+      return lexer.unexpectedCharacter(c);
+    } else {
+      lexer.backup();
+      lexer.emitIfNotBlank(Token.NUMBER_INTEGER);
+      return exports.lexWhitespace;
+    }
+  }
+};
+
+exports.lexNumberDecimals = function lexNumberDecimals(lexer) {
+  while (true) {
+    var c = lexer.read();
+
+    if (c === null) {
+      lexer.emitIfNotBlank(Token.NUMBER_DECIMALS);
+      return lexer.eof();
+    }
+
+    if (character.isDigit(c)) {
+      continue;
+    } else {
+      lexer.backup();
+      lexer.emitIfNotBlank(Token.NUMBER_DECIMALS);
+      return exports.lexWhitespace;
+    }
   }
 };
