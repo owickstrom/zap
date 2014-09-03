@@ -56,7 +56,7 @@ specialForms.add('let', function (scope, args) {
 });
 //
 // fn creates a closure.
-specialForms.add('*fn', function (scope, args) {
+specialForms.add('fn*', function (scope, args) {
   return closure.create(scope, args);
 });
 
@@ -107,6 +107,16 @@ specialForms.add('do', function (scope, args) {
     }
   }
   return evalNext(args);
+});
+
+// throw creates a rejected Promise.
+specialForms.add('throw*', function (scope, args) {
+  var error = mori.first(args);
+
+  // Make sure it's an Error.
+  error = typeof error === 'string' ? new Error(error) : error;
+
+  return Promise.reject(error);
 });
 
 // macroexpand runs a macro and returns the output data structure without

@@ -1,16 +1,16 @@
 ;; defs
 
-(def var (.setMacro (*fn [symbol] (.resolve *rt symbol))))
+(def var (.setMacro (fn* [symbol] (.resolve *rt symbol))))
 
 (def symbol-with-meta
-  (.setMacro (*fn [meta symbol]
+  (.setMacro (fn* [meta symbol]
                   (list 'with-meta meta (list 'quote symbol)))))
 
 (def
   (symbol-with-meta
     {:doc "Creates a function closure."}
     fn)
-  (.setMacro (*fn [& exprs] (cons '*fn exprs))))
+  (.setMacro (fn* [& exprs] (cons 'fn* exprs))))
 
 (def
   (symbol-with-meta
@@ -48,6 +48,10 @@
      (list 'def
            name
            (cons 'fn (cons name exprs))))))
+
+(defmacro throw
+  "Returns a rejected ES6 Promise."
+  [error] (list 'throw* error))
 
 (defn apply
   "The same as `f.apply(obj, args)` in Javascript."

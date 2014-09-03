@@ -256,6 +256,14 @@ describe('runtime', function () {
       });
     });
 
+    it('returns a rejected Promise when calling throw', function (done) {
+      return rt.loadString('(throw "a party")').then(function () {
+        done('Should fail');
+      }, function () {
+        done();
+      });
+    });
+
     describe('if', function () {
 
       it('returns the first expression if true', function () {
