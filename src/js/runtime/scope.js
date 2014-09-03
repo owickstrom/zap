@@ -18,14 +18,12 @@ specialForms.add('quote', function (scope, args) {
   return Promise.resolve(mori.first(args));
 });
 
-// eval calls this method.
+// the eval special form calls scope.eval two times; first to resolve symbols etc,
+// then to actually eval the data as code.
 specialForms.add('eval', function (scope, args) {
   var form = mori.first(args);
-  return new Promise(function (resolve, reject) {
-    return scope.eval(form).then(function (data) {
-      return resolve(scope.eval(data));
-    }, reject);
-  });
+  var eval = scope.eval.bind(scope);
+  return eval(form).then(eval);
 });
 
 // def does not eval the first argument if it's a symbol,
@@ -33,12 +31,9 @@ specialForms.add('eval', function (scope, args) {
 // something other than a symbol, it will be evaled.
 specialForms.add('def', function (scope, args) {
   var symbol = mori.first(args);
-  var symbolPromise;
-  if (Symbol.isInstance(symbol)) {
-    symbolPromise = Promise.resolve(symbol);
-  } else {
-    symbolPromise = scope.eval(symbol);
-  }
+
+  var symbolPromise =
+    Symbol.isInstance(symbol) ? Promise.resolve(symbol) : scope.eval(symbol);
 
   return symbolPromise.then(function (symbol) {
     var value = mori.first(mori.rest(args));
@@ -69,33 +64,30 @@ specialForms.add('*fn', function (scope, args) {
 specialForms.add('if', function (scope, args) {
   var count = mori.count(args);
 
-  return new Promise(function (resolve, reject) {
+  if (count < 2) {
+    return Promise.reject(new Error('Cannot if without a condition and a true branch'));
+  }
 
-    if (count < 2) {
-      return reject(new Error('Cannot if without a condition and a true branch'));
+  var condition = scope.eval(mori.first(args));
+
+  return condition.then(function (c) {
+    var exceptCondition = mori.rest(args);
+    var trueBranch = mori.first(exceptCondition);
+    var falseBranch;
+
+    if (count >= 3) {
+      falseBranch = mori.first(mori.rest(exceptCondition));
     }
 
-    var condition = scope.eval(mori.first(args));
+    var conditionFalse = c === false || c === null;
 
-    condition.then(function (c) {
-      var exceptCondition = mori.rest(args);
-      var trueBranch = mori.first(exceptCondition);
-      var falseBranch;
-
-      if (count >= 3) {
-        falseBranch = mori.first(mori.rest(exceptCondition));
-      }
-
-      var conditionFalse = c === false || c === null;
-
-      if (!conditionFalse) {
-        return resolve(scope.eval(trueBranch));
-      } else if (falseBranch !== undefined) {
-        return resolve(scope.eval(falseBranch));
-      } else {
-        return resolve(null);
-      }
-    });
+    if (!conditionFalse) {
+      return scope.eval(trueBranch);
+    } else if (falseBranch !== undefined) {
+      return scope.eval(falseBranch);
+    } else {
+      return Promise.resolve(null);
+    }
   });
 });
 
@@ -138,40 +130,31 @@ Scope.prototype.wrap = function (bindings, evalArgs) {
 };
 
 Scope.create = function (bindings, subScope, evalArgs) {
-  return new Promise(function (resolve, reject) {
-    var count = mori.count(bindings);
+  var count = mori.count(bindings);
 
-    if (count == 0) {
-      return resolve(subScope);
-    } else if (count % 2 !== 0) {
-      return reject(new Error('Scope.create requires a bindings vector with even length'));
-    }
+  if (count == 0) {
+    return Promise.resolve(subScope);
+  } else if (count % 2 !== 0) {
+    return Promise.reject(new Error('Scope.create requires a bindings vector with even length'));
+  }
 
-    var symbol = mori.first(bindings);
-    var rest = mori.rest(bindings);
-    var value = mori.first(rest);
+  var symbol = mori.first(bindings);
+  var rest = mori.rest(bindings);
+  var value = mori.first(rest);
 
-    if (!Symbol.isInstance(symbol)) {
-      return reject(new Error(printString(symbol) + ' is not a symbol'));
-    }
+  if (!Symbol.isInstance(symbol)) {
+    return Promise.reject(new Error(printString(symbol) + ' is not a symbol'));
+  }
 
-    var key = symbol.name;
+  var valuePromise = evalArgs ? subScope.eval(value) : Promise.resolve(value);
 
-    var valuePromise;
-    if (evalArgs) {
-      valuePromise = subScope.eval(value);
-    } else {
-      valuePromise = Promise.resolve(value);
-    }
+  return valuePromise.then(function (value) {
+    var values = mori.hash_map(symbol.name, value);
 
-    valuePromise.then(function (value) {
-      var values = mori.hash_map(key, value);
-
-       Scope.create(
+      return Scope.create(
         mori.rest(rest),
         new Scope(subScope.runtime, values, subScope),
-        evalArgs).then(resolve, reject);
-    }, reject);
+        evalArgs);
   });
 }
 
@@ -207,60 +190,58 @@ function evalMap(scope, map) {
 Scope.prototype.eval = function (form) {
   var self = this;
   var eval = function (value) { return self.eval(value); }
-  return new Promise(function (resolve, reject) {
 
-    if (mori.is_list(form)) {
-      var seq = mori.seq(form);
-      var first = mori.first(seq);
+  if (mori.is_list(form)) {
+    var seq = mori.seq(form);
+    var first = mori.first(seq);
 
-      if (!first) {
-        return resolve(form);
+    if (!first) {
+      return Promise.resolve(form);
+    }
+
+    if (specialForms.has(first)) {
+      return specialForms.eval(self, first, seq);
+    }
+
+    return self.eval(first).then(function (fn) {
+      if (!fn || !fn.apply) {
+        return Promise.reject(new Error(printString(fn) + ' is not a fn'));
       }
 
-      if (specialForms.has(first)) {
-        return specialForms.eval(self, first, seq).then(resolve, reject);
+      if (!!fn.isMacro && fn.isMacro()) {
+        return self.macroexpand(seq).then(eval);
+
+      } else {
+        var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
+        return Promise.all(argPromises).then(function (args) {
+          return fn.apply(null, args);
+        });
       }
+    });
 
-      self.eval(first).then(function (fn) {
-        if (!fn || !fn.apply) {
-          return reject(new Error(printString(fn) + ' is not a fn'));
-        }
+  } else if (mori.is_vector(form)) {
+    var promises = mori.clj_to_js(mori.map(eval, form));
 
-        if (!!fn.isMacro && fn.isMacro()) {
-          return self.macroexpand(seq).then(function (expanded) {
-            return self.eval(expanded).then(resolve, reject);
-          }, reject);
+    return Promise.all(promises).then(function (elements) {
+      var newVector = mori.vector.apply(null, elements);
+      // Transfer meta data.
+      newVector.__meta = form.__meta;
+      return newVector;
+    });
 
-        } else {
-          var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
-          Promise.all(argPromises).then(function (args) {
-            return resolve(fn.apply(null, args));
-          }, reject);
-        }
-      }, reject);
-
-    } else if (mori.is_vector(form)) {
-      var promises = mori.clj_to_js(mori.map(eval, form));
-
-      return Promise.all(promises).then(function (elements) {
-        var newVector = mori.vector.apply(null, elements);
-        // Transfer meta data.
-        newVector.__meta = form.__meta;
-        return newVector;
-      }, reject).then(resolve, reject);
-
-    } else if (keyword.isInstance(form)) {
-      // Treat keywords (which are actually a mori hash map with only one key)
-      // different from maps in general.
-      return resolve(form);
-    } else if (mori.is_map(form)) {
-      return resolve(evalMap(self, form));
-    } else if (Symbol.isInstance(form)) {
-      // Symbols are automatically derefed.
+  } else if (keyword.isInstance(form)) {
+    // Treat keywords (which are actually a mori hash map with only one key)
+    // different from maps in general.
+    return Promise.resolve(form);
+  } else if (mori.is_map(form)) {
+    return Promise.resolve(evalMap(self, form));
+  } else if (Symbol.isInstance(form)) {
+    // Symbols are automatically derefed.
+    return new Promise(function (resolve, reject) {
       self.resolve(form).then(function (bound) {
 
         // Symbol is bound in scope.
-        return resolve(bound);
+        resolve(bound);
 
       }, function () {
 
@@ -269,15 +250,15 @@ Scope.prototype.eval = function (form) {
           return !!v && v.deref ? v.deref() : v;
         }).then(resolve, reject);
       });
+    });
 
-    } else if (MethodName.isInstance(form)) {
-      return resolve(methodCall.create(form));
-    } else if (PropertyName.isInstance(form)) {
-      return resolve(propertyGetter.create(form));
-    } else {
-      return resolve(form);
-    }
-  });
+  } else if (MethodName.isInstance(form)) {
+    return Promise.resolve(methodCall.create(form));
+  } else if (PropertyName.isInstance(form)) {
+    return Promise.resolve(propertyGetter.create(form));
+  } else {
+    return Promise.resolve(form);
+  }
 };
 
 Scope.prototype.macroexpand = function (seq) {

@@ -189,23 +189,19 @@ Runtime.prototype.resolve = function (symbol) {
 };
 
 Runtime.prototype.require = function (pkgName) {
-  var self = this;
-  return new Promise(function (resolve, reject) {
-    self._loader.readZapSource(pkgName).then(function (source) {
-      resolve(self.loadTopLevelFormsString(source));
-    }, function (err) {
-      reject(new Error('Failed to require ' + pkgName.toString() + ': ' + err));
-    });
-  });
+  var loadForms = this.loadTopLevelFormsString.bind(this);
+
+  function wrapError(err) {
+    return new Error('Failed to require ' + pkgName.toString() + ': ' + err);
+  }
+
+  return this._loader.readZapSource(pkgName).then(loadForms, wrapError);
 };
 
 Runtime.prototype.loadFile = function (path) {
-  var self = this;
-  return new Promise(function (resolve, reject) {
-    self._loader.readFile(path).then(function (source) {
-      self.loadTopLevelFormsString(source).then(resolve, reject);
-    }, reject);
-  });
+  var loadForms = this.loadTopLevelFormsString.bind(this);
+
+  return this._loader.readFile(path).then(loadForms);
 };
 
 Runtime.prototype.eval = function (value) {
@@ -219,39 +215,29 @@ Runtime.prototype.evalForms = function (forms) {
     return Promise.resolve(null);
   }
 
-  return new Promise(function (resolve, reject) {
-    self.eval(mori.first(forms)).then(function (evaled) {
-      self.evalForms(mori.rest(forms)).then(function (restEvaled) {
-        resolve(mori.cons(evaled, restEvaled));
-      }, reject);
-    }, reject);
+  return self.eval(mori.first(forms)).then(function (evaled) {
+    return self.evalForms(mori.rest(forms)).then(function (restEvaled) {
+      return mori.cons(evaled, restEvaled);
+    });
   });
 };
 
 Runtime.prototype.loadString = function (s) {
-  var self = this;
-
-  return new Promise(function (resolve, reject) {
-    try {
-      var value = Reader.readString(s);
-      return self.eval(value).then(resolve, reject);
-    } catch (e) {
-      return reject(e);
-    }
-  });
+  try {
+    var value = Reader.readString(s);
+    return this.eval(value);
+  } catch (e) {
+    return Promise.reject(e);
+  }
 };
 
 Runtime.prototype.loadTopLevelFormsString = function (s) {
-  var self = this;
-
-  return new Promise(function (resolve, reject) {
-    try {
-      var forms = Reader.readTopLevelFormsString(s);
-      resolve(self.evalForms(forms));
-    } catch (e) {
-      return reject(e);
-    }
-  });
+  try {
+    var forms = Reader.readTopLevelFormsString(s);
+    return this.evalForms(forms);
+  } catch (e) {
+    return Promise.reject(e);
+  }
 };
 
 module.exports = Runtime;

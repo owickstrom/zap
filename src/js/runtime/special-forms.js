@@ -14,23 +14,20 @@ SpecialForms.prototype.has = function (symbol) {
 };
 
 SpecialForms.prototype.eval = function (scope, symbol, seq) {
-  var self = this;
-  return new Promise(function (resolve, reject) {
-    if (!symbol) {
-      return reject('symbol cannot be ' + symbol);
-    }
-    if (!seq) {
-      return reject('symbol cannot be ' + seq);
-    }
+  if (!symbol) {
+    return Promise.reject('symbol cannot be ' + symbol);
+  }
+  if (!seq) {
+    return Promise.reject('symbol cannot be ' + seq);
+  }
 
-    var fn = mori.get(self._fns, symbol.name);
+  var fn = mori.get(this._fns, symbol.name);
 
-    if (fn) {
-      return resolve(fn(scope, mori.rest(seq)));
-    } else {
-      return reject(symbol.name + ' is not a special form');
-    }
-  })
+  if (fn) {
+    return Promise.resolve(fn(scope, mori.rest(seq)));
+  } else {
+    return Promise.reject(symbol.name + ' is not a special form');
+  }
 };
 
 module.exports = SpecialForms;
