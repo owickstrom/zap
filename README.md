@@ -57,6 +57,7 @@ Some of the supported stuff right now...
 
 ;; errors and error handling
 (throw "Some serious error!")
+(try (conquer-the-world) (catch e (println e)))
 
 ;; metadata (on data structures, fns, symbols and vars so far...)
 (def identity (with-meta {:doc "Returns its argument."} (fn [a] a)))
