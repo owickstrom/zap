@@ -55,6 +55,9 @@ Some of the supported stuff right now...
 ;; functions
 ((fn [a] (uppercase a)) "hello")
 
+;; errors and error handling
+(throw "Some serious error!")
+
 ;; metadata (on data structures, fns, symbols and vars so far...)
 (def identity (with-meta {:doc "Returns its argument."} (fn [a] a)))
 
