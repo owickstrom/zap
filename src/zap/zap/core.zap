@@ -50,8 +50,12 @@
            (cons 'fn (cons name exprs))))))
 
 (defmacro throw
-  "Returns a rejected ES6 Promise."
+  "Returns a rejected promise."
   [error] (list 'throw* error))
+
+(defmacro try
+  "Evaluates the expression and catches any rejected promise with the catch clause."
+  [expr catch-clause] (list 'try* expr catch-clause))
 
 (defn apply
   "The same as `f.apply(obj, args)` in Javascript."

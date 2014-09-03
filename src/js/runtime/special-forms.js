@@ -136,6 +136,26 @@ add('throw*', function (scope, args) {
   return Promise.reject(error);
 });
 
+// try evaluates an expression and invokes the catch clause if it returns a
+// rejected Promise.
+add('try*', function (scope, args) {
+  var expr = mori.first(args);
+  var catchClause = mori.first(mori.rest(args));
+
+  return new Promise(function (resolve, reject) {
+    scope.eval(expr).then(resolve, function (e) {
+      var exceptCatch = mori.rest(catchClause);
+      var symbol = mori.first(exceptCatch);
+      var catchExpr = mori.first(mori.rest(exceptCatch));
+      var bindings = mori.vector(symbol, e);
+
+      scope.wrap(bindings, true).then(function (catchScope) {
+        catchScope.eval(catchExpr).then(resolve, reject);
+      }, reject);
+    });
+  });
+});
+
 // macroexpand runs a macro and returns the output data structure without
 // evaluating it.
 add('macroexpand', function (scope, args) {

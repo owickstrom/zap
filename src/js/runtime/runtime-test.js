@@ -264,6 +264,18 @@ describe('runtime', function () {
       });
     });
 
+    it('returns the value if promise is not rejected', function () {
+      return rt.loadString('(try (quote 123) (catch e (str e)))').then(function (n) {
+        expect(n).to.equal(123);
+      });
+    });
+
+    it('catches rejected promises in a try', function () {
+      return rt.loadString('(try (throw "a party") (catch e (str e)))').then(function (s) {
+        expect(s).to.contain("a party");
+      });
+    });
+
     describe('if', function () {
 
       it('returns the first expression if true', function () {
