@@ -30,6 +30,7 @@
     "karma-chai": "~0.1.0",
     "karma-browserifast": "~0.6.1",
     "karma-chrome-launcher": "~0.1.4",
-    "es6-promise": "~1.0.0"
+    "es6-promise": "~1.0.0",
+    "stacktrace-js": "~0.6.2"
   }
 }
