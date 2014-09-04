@@ -5,14 +5,12 @@ function BrowserInterop() {
 }
 
 BrowserInterop.prototype.resolve = function (symbol) {
-  return new Promise(function (resolve, reject) {
-    if (!isInterop(symbol)) {
-      return reject(new Error('Could not resolve: ' + symbol.toString()));
-    }
+  if (!isInterop(symbol)) {
+    return Promise.reject(new Error('Could not resolve: ' + symbol.toString()));
+  }
 
-    var prop = symbol.name;
-    return resolve(window[prop]);
-  });
+  var prop = symbol.name;
+  return Promise.resolve(window[prop]);
 };
 
 module.exports = BrowserInterop;

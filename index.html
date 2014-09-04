@@ -18,9 +18,15 @@
 <div class="wrapper">
   <header>
     <h1>Zap REPL</h1>
+    <div class="options">
+      <label>
+        <input type="checkbox" checked="checked" id="highlight-zap-sources">
+        Highlight Zap Sources
+      </label>
+    </div>
     <a href="https://github.com/owickstrom/zap#the-language" target="_blank">Help</a>
   </header>
-  <main>
+  <main class="highlight-zap-sources">
     <textarea id="repl" autofocus="true"></textarea>
   </main>
 </div>

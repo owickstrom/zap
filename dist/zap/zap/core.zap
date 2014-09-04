@@ -1,16 +1,16 @@
 ;; defs
 
-(def var (.setMacro (*fn [symbol] (.resolve *rt symbol))))
+(def var (.setMacro (fn* [symbol] (.resolve *rt symbol))))
 
 (def symbol-with-meta
-  (.setMacro (*fn [meta symbol]
+  (.setMacro (fn* [meta symbol]
                   (list 'with-meta meta (list 'quote symbol)))))
 
 (def
   (symbol-with-meta
     {:doc "Creates a function closure."}
     fn)
-  (.setMacro (*fn [& exprs] (cons '*fn exprs))))
+  (.setMacro (fn* [& exprs] (cons 'fn* exprs))))
 
 (def
   (symbol-with-meta
@@ -48,6 +48,14 @@
      (list 'def
            name
            (cons 'fn (cons name exprs))))))
+
+(defmacro throw
+  "Returns a rejected promise."
+  [error] (list 'throw* error))
+
+(defmacro try
+  "Evaluates the expression and catches any rejected promise with the catch clause."
+  [expr catch-clause] (list 'try* expr catch-clause))
 
 (defn apply
   "The same as `f.apply(obj, args)` in Javascript."

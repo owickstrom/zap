@@ -1,7 +1,7 @@
 var Reader = require('./reader.js');
 var equals = require('../lang/equals.js');
 var Symbol = require('../lang/symbol.js');
-var keyword = require('../lang/keyword.js');
+var Keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
 var m = require('mori');
 
@@ -82,17 +82,17 @@ describe('reader', function () {
 
     it('reads maps with keywords', function () {
       var read = Reader.readString('{:key :a}');
-      var map = m.hash_map(keyword.fromString(':key'), keyword.fromString(':a'));
+      var map = m.hash_map(Keyword.fromString(':key'), Keyword.fromString(':a'));
 
       expect(equals(read, map)).to.be.true;
     });
 
     it('reads keywords', function () {
       var read = Reader.readString(':hello');
-      var kw = keyword.fromString(':hello');
+      var kw = Keyword.fromString(':hello');
 
       expect(equals(read, kw)).to.be.true;
-      expect(keyword.isInstance(read)).to.be.true;
+      expect(Keyword.isInstance(read)).to.be.true;
     });
 
     it('reads symbols', function () {
@@ -114,6 +114,14 @@ describe('reader', function () {
       var name = PkgName.withSegments('pkg1', 'pkg2');
 
       expect(equals(read, name)).to.be.true;
+    });
+
+    it('adds metadata to read symbols', function () {
+      var read = Reader.readString('hello');
+      var meta = read.__meta;
+
+      expect(m.get(meta, Keyword.fromString(':line'))).to.equal(1);
+      expect(m.get(meta, Keyword.fromString(':column'))).to.equal(1);
     });
 
     it('throws an error on empty name', function () {

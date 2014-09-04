@@ -1077,6 +1077,497 @@ p("mori.zip.next",function(a){if(Wb.a(eh,a.b?a.b(1):a.call(null,1)))return a;var
 p("mori.zip.remove",function(a){P.c(a,0,null);var b=P.c(a,1,null),b=Mc(b)?S.a(Tf,b):b,c=Q.a(b,Zg),d=Q.a(b,Ug),e=Q.a(b,ah),f=Q.a(b,Wg);if(null==b)throw"Remove at top";if(0<O(c))for(a=N(new W(null,2,5,X,[yc(c),R.d(b,Zg,zc(c),J([bh,!0],0))],null),xc(a));;)if(b=Oi(a),b=r(b)?Ri(a):b,r(b))a=Ui(b);else return a;else return N(new W(null,2,5,X,[Qi(a,yc(e),f),r(d)?R.c(d,bh,!0):d],null),xc(a))});;return this.mori;}.call({});});
 
 },{}],13:[function(_dereq_,module,exports){
+// Domain Public by Eric Wendelin http://www.eriwen.com/ (2008)
+//                  Luke Smith http://lucassmith.name/ (2008)
+//                  Loic Dachary <loic@dachary.org> (2008)
+//                  Johan Euphrosine <proppy@aminche.com> (2008)
+//                  Oyvind Sean Kinsey http://kinsey.no/blog (2010)
+//                  Victor Homyakov <victor-homyakov@users.sourceforge.net> (2010)
+/*global module, exports, define, ActiveXObject*/
+(function(global, factory) {
+    if (typeof exports === 'object') {
+        // Node
+        module.exports = factory();
+    } else if (typeof define === 'function' && define.amd) {
+        // AMD
+        define(factory);
+    } else {
+        // Browser globals
+        global.printStackTrace = factory();
+    }
+}(this, function() {
+    /**
+     * Main function giving a function stack trace with a forced or passed in Error
+     *
+     * @cfg {Error} e The error to create a stacktrace from (optional)
+     * @cfg {Boolean} guess If we should try to resolve the names of anonymous functions
+     * @return {Array} of Strings with functions, lines, files, and arguments where possible
+     */
+    function printStackTrace(options) {
+        options = options || {guess: true};
+        var ex = options.e || null, guess = !!options.guess;
+        var p = new printStackTrace.implementation(), result = p.run(ex);
+        return (guess) ? p.guessAnonymousFunctions(result) : result;
+    }
+
+    printStackTrace.implementation = function() {
+    };
+
+    printStackTrace.implementation.prototype = {
+        /**
+         * @param {Error} [ex] The error to create a stacktrace from (optional)
+         * @param {String} [mode] Forced mode (optional, mostly for unit tests)
+         */
+        run: function(ex, mode) {
+            ex = ex || this.createException();
+            mode = mode || this.mode(ex);
+            if (mode === 'other') {
+                return this.other(arguments.callee);
+            } else {
+                return this[mode](ex);
+            }
+        },
+
+        createException: function() {
+            try {
+                this.undef();
+            } catch (e) {
+                return e;
+            }
+        },
+
+        /**
+         * Mode could differ for different exception, e.g.
+         * exceptions in Chrome may or may not have arguments or stack.
+         *
+         * @return {String} mode of operation for the exception
+         */
+        mode: function(e) {
+            if (e['arguments'] && e.stack) {
+                return 'chrome';
+            }
+
+            if (e.stack && e.sourceURL) {
+                return 'safari';
+            }
+
+            if (e.stack && e.number) {
+                return 'ie';
+            }
+
+            if (e.stack && e.fileName) {
+                return 'firefox';
+            }
+
+            if (e.message && e['opera#sourceloc']) {
+                // e.message.indexOf("Backtrace:") > -1 -> opera9
+                // 'opera#sourceloc' in e -> opera9, opera10a
+                // !e.stacktrace -> opera9
+                if (!e.stacktrace) {
+                    return 'opera9'; // use e.message
+                }
+                if (e.message.indexOf('\n') > -1 && e.message.split('\n').length > e.stacktrace.split('\n').length) {
+                    // e.message may have more stack entries than e.stacktrace
+                    return 'opera9'; // use e.message
+                }
+                return 'opera10a'; // use e.stacktrace
+            }
+
+            if (e.message && e.stack && e.stacktrace) {
+                // e.stacktrace && e.stack -> opera10b
+                if (e.stacktrace.indexOf("called from line") < 0) {
+                    return 'opera10b'; // use e.stacktrace, format differs from 'opera10a'
+                }
+                // e.stacktrace && e.stack -> opera11
+                return 'opera11'; // use e.stacktrace, format differs from 'opera10a', 'opera10b'
+            }
+
+            if (e.stack && !e.fileName) {
+                // Chrome 27 does not have e.arguments as earlier versions,
+                // but still does not have e.fileName as Firefox
+                return 'chrome';
+            }
+
+            return 'other';
+        },
+
+        /**
+         * Given a context, function name, and callback function, overwrite it so that it calls
+         * printStackTrace() first with a callback and then runs the rest of the body.
+         *
+         * @param {Object} context of execution (e.g. window)
+         * @param {String} functionName to instrument
+         * @param {Function} callback function to call with a stack trace on invocation
+         */
+        instrumentFunction: function(context, functionName, callback) {
+            context = context || window;
+            var original = context[functionName];
+            context[functionName] = function instrumented() {
+                callback.call(this, printStackTrace().slice(4));
+                return context[functionName]._instrumented.apply(this, arguments);
+            };
+            context[functionName]._instrumented = original;
+        },
+
+        /**
+         * Given a context and function name of a function that has been
+         * instrumented, revert the function to it's original (non-instrumented)
+         * state.
+         *
+         * @param {Object} context of execution (e.g. window)
+         * @param {String} functionName to de-instrument
+         */
+        deinstrumentFunction: function(context, functionName) {
+            if (context[functionName].constructor === Function &&
+                context[functionName]._instrumented &&
+                context[functionName]._instrumented.constructor === Function) {
+                context[functionName] = context[functionName]._instrumented;
+            }
+        },
+
+        /**
+         * Given an Error object, return a formatted Array based on Chrome's stack string.
+         *
+         * @param e - Error object to inspect
+         * @return Array<String> of function calls, files and line numbers
+         */
+        chrome: function(e) {
+            return (e.stack + '\n')
+                .replace(/^[\s\S]+?\s+at\s+/, ' at ') // remove message
+                .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
+                .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
+                .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
+                .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
+                .split('\n')
+                .slice(0, -1);
+        },
+
+        /**
+         * Given an Error object, return a formatted Array based on Safari's stack string.
+         *
+         * @param e - Error object to inspect
+         * @return Array<String> of function calls, files and line numbers
+         */
+        safari: function(e) {
+            return e.stack.replace(/\[native code\]\n/m, '')
+                .replace(/^(?=\w+Error\:).*$\n/m, '')
+                .replace(/^@/gm, '{anonymous}()@')
+                .split('\n');
+        },
+
+        /**
+         * Given an Error object, return a formatted Array based on IE's stack string.
+         *
+         * @param e - Error object to inspect
+         * @return Array<String> of function calls, files and line numbers
+         */
+        ie: function(e) {
+            return e.stack
+                .replace(/^\s*at\s+(.*)$/gm, '$1')
+                .replace(/^Anonymous function\s+/gm, '{anonymous}() ')
+                .replace(/^(.+)\s+\((.+)\)$/gm, '$1@$2')
+                .split('\n')
+                .slice(1);
+        },
+
+        /**
+         * Given an Error object, return a formatted Array based on Firefox's stack string.
+         *
+         * @param e - Error object to inspect
+         * @return Array<String> of function calls, files and line numbers
+         */
+        firefox: function(e) {
+            return e.stack.replace(/(?:\n@:0)?\s+$/m, '')
+                .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
+                .split('\n');
+        },
+
+        opera11: function(e) {
+            var ANON = '{anonymous}', lineRE = /^.*line (\d+), column (\d+)(?: in (.+))? in (\S+):$/;
+            var lines = e.stacktrace.split('\n'), result = [];
+
+            for (var i = 0, len = lines.length; i < len; i += 2) {
+                var match = lineRE.exec(lines[i]);
+                if (match) {
+                    var location = match[4] + ':' + match[1] + ':' + match[2];
+                    var fnName = match[3] || "global code";
+                    fnName = fnName.replace(/<anonymous function: (\S+)>/, "$1").replace(/<anonymous function>/, ANON);
+                    result.push(fnName + '@' + location + ' -- ' + lines[i + 1].replace(/^\s+/, ''));
+                }
+            }
+
+            return result;
+        },
+
+        opera10b: function(e) {
+            // "<anonymous function: run>([arguments not available])@file://localhost/G:/js/stacktrace.js:27\n" +
+            // "printStackTrace([arguments not available])@file://localhost/G:/js/stacktrace.js:18\n" +
+            // "@file://localhost/G:/js/test/functional/testcase1.html:15"
+            var lineRE = /^(.*)@(.+):(\d+)$/;
+            var lines = e.stacktrace.split('\n'), result = [];
+
+            for (var i = 0, len = lines.length; i < len; i++) {
+                var match = lineRE.exec(lines[i]);
+                if (match) {
+                    var fnName = match[1] ? (match[1] + '()') : "global code";
+                    result.push(fnName + '@' + match[2] + ':' + match[3]);
+                }
+            }
+
+            return result;
+        },
+
+        /**
+         * Given an Error object, return a formatted Array based on Opera 10's stacktrace string.
+         *
+         * @param e - Error object to inspect
+         * @return Array<String> of function calls, files and line numbers
+         */
+        opera10a: function(e) {
+            // "  Line 27 of linked script file://localhost/G:/js/stacktrace.js\n"
+            // "  Line 11 of inline#1 script in file://localhost/G:/js/test/functional/testcase1.html: In function foo\n"
+            var ANON = '{anonymous}', lineRE = /Line (\d+).*script (?:in )?(\S+)(?:: In function (\S+))?$/i;
+            var lines = e.stacktrace.split('\n'), result = [];
+
+            for (var i = 0, len = lines.length; i < len; i += 2) {
+                var match = lineRE.exec(lines[i]);
+                if (match) {
+                    var fnName = match[3] || ANON;
+                    result.push(fnName + '()@' + match[2] + ':' + match[1] + ' -- ' + lines[i + 1].replace(/^\s+/, ''));
+                }
+            }
+
+            return result;
+        },
+
+        // Opera 7.x-9.2x only!
+        opera9: function(e) {
+            // "  Line 43 of linked script file://localhost/G:/js/stacktrace.js\n"
+            // "  Line 7 of inline#1 script in file://localhost/G:/js/test/functional/testcase1.html\n"
+            var ANON = '{anonymous}', lineRE = /Line (\d+).*script (?:in )?(\S+)/i;
+            var lines = e.message.split('\n'), result = [];
+
+            for (var i = 2, len = lines.length; i < len; i += 2) {
+                var match = lineRE.exec(lines[i]);
+                if (match) {
+                    result.push(ANON + '()@' + match[2] + ':' + match[1] + ' -- ' + lines[i + 1].replace(/^\s+/, ''));
+                }
+            }
+
+            return result;
+        },
+
+        // Safari 5-, IE 9-, and others
+        other: function(curr) {
+            var ANON = '{anonymous}', fnRE = /function(?:\s+([\w$]+))?\s*\(/, stack = [], fn, args, maxStackSize = 10;
+            var slice = Array.prototype.slice;
+            while (curr && stack.length < maxStackSize) {
+                fn = fnRE.test(curr.toString()) ? RegExp.$1 || ANON : ANON;
+                try {
+                    args = slice.call(curr['arguments'] || []);
+                } catch (e) {
+                    args = ['Cannot access arguments: ' + e];
+                }
+                stack[stack.length] = fn + '(' + this.stringifyArguments(args) + ')';
+                try {
+                    curr = curr.caller;
+                } catch (e) {
+                    stack[stack.length] = 'Cannot access caller: ' + e;
+                    break;
+                }
+            }
+            return stack;
+        },
+
+        /**
+         * Given arguments array as a String, substituting type names for non-string types.
+         *
+         * @param {Arguments,Array} args
+         * @return {String} stringified arguments
+         */
+        stringifyArguments: function(args) {
+            var result = [];
+            var slice = Array.prototype.slice;
+            for (var i = 0; i < args.length; ++i) {
+                var arg = args[i];
+                if (arg === undefined) {
+                    result[i] = 'undefined';
+                } else if (arg === null) {
+                    result[i] = 'null';
+                } else if (arg.constructor) {
+                    // TODO constructor comparison does not work for iframes
+                    if (arg.constructor === Array) {
+                        if (arg.length < 3) {
+                            result[i] = '[' + this.stringifyArguments(arg) + ']';
+                        } else {
+                            result[i] = '[' + this.stringifyArguments(slice.call(arg, 0, 1)) + '...' + this.stringifyArguments(slice.call(arg, -1)) + ']';
+                        }
+                    } else if (arg.constructor === Object) {
+                        result[i] = '#object';
+                    } else if (arg.constructor === Function) {
+                        result[i] = '#function';
+                    } else if (arg.constructor === String) {
+                        result[i] = '"' + arg + '"';
+                    } else if (arg.constructor === Number) {
+                        result[i] = arg;
+                    } else {
+                        result[i] = '?';
+                    }
+                }
+            }
+            return result.join(',');
+        },
+
+        sourceCache: {},
+
+        /**
+         * @return {String} the text from a given URL
+         */
+        ajax: function(url) {
+            var req = this.createXMLHTTPObject();
+            if (req) {
+                try {
+                    req.open('GET', url, false);
+                    //req.overrideMimeType('text/plain');
+                    //req.overrideMimeType('text/javascript');
+                    req.send(null);
+                    //return req.status == 200 ? req.responseText : '';
+                    return req.responseText;
+                } catch (e) {
+                }
+            }
+            return '';
+        },
+
+        /**
+         * Try XHR methods in order and store XHR factory.
+         *
+         * @return {XMLHttpRequest} XHR function or equivalent
+         */
+        createXMLHTTPObject: function() {
+            var xmlhttp, XMLHttpFactories = [
+                function() {
+                    return new XMLHttpRequest();
+                }, function() {
+                    return new ActiveXObject('Msxml2.XMLHTTP');
+                }, function() {
+                    return new ActiveXObject('Msxml3.XMLHTTP');
+                }, function() {
+                    return new ActiveXObject('Microsoft.XMLHTTP');
+                }
+            ];
+            for (var i = 0; i < XMLHttpFactories.length; i++) {
+                try {
+                    xmlhttp = XMLHttpFactories[i]();
+                    // Use memoization to cache the factory
+                    this.createXMLHTTPObject = XMLHttpFactories[i];
+                    return xmlhttp;
+                } catch (e) {
+                }
+            }
+        },
+
+        /**
+         * Given a URL, check if it is in the same domain (so we can get the source
+         * via Ajax).
+         *
+         * @param url {String} source url
+         * @return {Boolean} False if we need a cross-domain request
+         */
+        isSameDomain: function(url) {
+            return typeof location !== "undefined" && url.indexOf(location.hostname) !== -1; // location may not be defined, e.g. when running from nodejs.
+        },
+
+        /**
+         * Get source code from given URL if in the same domain.
+         *
+         * @param url {String} JS source URL
+         * @return {Array} Array of source code lines
+         */
+        getSource: function(url) {
+            // TODO reuse source from script tags?
+            if (!(url in this.sourceCache)) {
+                this.sourceCache[url] = this.ajax(url).split('\n');
+            }
+            return this.sourceCache[url];
+        },
+
+        guessAnonymousFunctions: function(stack) {
+            for (var i = 0; i < stack.length; ++i) {
+                var reStack = /\{anonymous\}\(.*\)@(.*)/,
+                    reRef = /^(.*?)(?::(\d+))(?::(\d+))?(?: -- .+)?$/,
+                    frame = stack[i], ref = reStack.exec(frame);
+
+                if (ref) {
+                    var m = reRef.exec(ref[1]);
+                    if (m) { // If falsey, we did not get any file/line information
+                        var file = m[1], lineno = m[2], charno = m[3] || 0;
+                        if (file && this.isSameDomain(file) && lineno) {
+                            var functionName = this.guessAnonymousFunction(file, lineno, charno);
+                            stack[i] = frame.replace('{anonymous}', functionName);
+                        }
+                    }
+                }
+            }
+            return stack;
+        },
+
+        guessAnonymousFunction: function(url, lineNo, charNo) {
+            var ret;
+            try {
+                ret = this.findFunctionName(this.getSource(url), lineNo);
+            } catch (e) {
+                ret = 'getSource failed with url: ' + url + ', exception: ' + e.toString();
+            }
+            return ret;
+        },
+
+        findFunctionName: function(source, lineNo) {
+            // FIXME findFunctionName fails for compressed source
+            // (more than one function on the same line)
+            // function {name}({args}) m[1]=name m[2]=args
+            var reFunctionDeclaration = /function\s+([^(]*?)\s*\(([^)]*)\)/;
+            // {name} = function ({args}) TODO args capture
+            // /['"]?([0-9A-Za-z_]+)['"]?\s*[:=]\s*function(?:[^(]*)/
+            var reFunctionExpression = /['"]?([$_A-Za-z][$_A-Za-z0-9]*)['"]?\s*[:=]\s*function\b/;
+            // {name} = eval()
+            var reFunctionEvaluation = /['"]?([$_A-Za-z][$_A-Za-z0-9]*)['"]?\s*[:=]\s*(?:eval|new Function)\b/;
+            // Walk backwards in the source lines until we find
+            // the line which matches one of the patterns above
+            var code = "", line, maxLines = Math.min(lineNo, 20), m, commentPos;
+            for (var i = 0; i < maxLines; ++i) {
+                // lineNo is 1-based, source[] is 0-based
+                line = source[lineNo - i - 1];
+                commentPos = line.indexOf('//');
+                if (commentPos >= 0) {
+                    line = line.substr(0, commentPos);
+                }
+                // TODO check other types of comments? Commented code may lead to false positive
+                if (line) {
+                    code = line + code;
+                    m = reFunctionExpression.exec(code);
+                    if (m && m[1]) {
+                        return m[1];
+                    }
+                    m = reFunctionDeclaration.exec(code);
+                    if (m && m[1]) {
+                        //return m[1] + "(" + (m[2] || "") + ")";
+                        return m[1];
+                    }
+                    m = reFunctionEvaluation.exec(code);
+                    if (m && m[1]) {
+                        return m[1];
+                    }
+                }
+            }
+            return '(?)';
+        }
+    };
+
+    return printStackTrace;
+}));
+
+},{}],14:[function(_dereq_,module,exports){
 var m = _dereq_('mori');
 
 function collectionEquals(a, b) {
@@ -1128,7 +1619,7 @@ function equals(a, b) {
 
 module.exports = equals;
 
-},{"mori":12}],14:[function(_dereq_,module,exports){
+},{"mori":12}],15:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 
@@ -1168,7 +1659,7 @@ module.exports.isInstance = function (o) {
   return mori.is_map(o) && o.__type === 'Keyword';
 };
 
-},{"es6-promise":2,"mori":12}],15:[function(_dereq_,module,exports){
+},{"es6-promise":2,"mori":12}],16:[function(_dereq_,module,exports){
 function MethodName(name) {
   this.name = name;
 }
@@ -1191,7 +1682,7 @@ MethodName.prototype.equals = function (other) {
 
 module.exports = MethodName;
 
-},{}],16:[function(_dereq_,module,exports){
+},{}],17:[function(_dereq_,module,exports){
 var mori = _dereq_('mori');
 var printString = _dereq_('../lang/print-string.js');
 
@@ -1246,7 +1737,7 @@ module.exports = PkgName;
 
 
 
-},{"../lang/print-string.js":18,"mori":12}],17:[function(_dereq_,module,exports){
+},{"../lang/print-string.js":19,"mori":12}],18:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 var Var = _dereq_('./var.js');
@@ -1278,7 +1769,7 @@ Pkg.prototype.def = function (symbol, value) {
 
 module.exports = Pkg;
 
-},{"./print-string.js":18,"./var.js":21,"es6-promise":2,"mori":12}],18:[function(_dereq_,module,exports){
+},{"./print-string.js":19,"./var.js":22,"es6-promise":2,"mori":12}],19:[function(_dereq_,module,exports){
 var mori = _dereq_('mori');
 var keyword = _dereq_('./keyword.js');
 
@@ -1320,7 +1811,7 @@ function printString() {
 
 module.exports = printString;
 
-},{"./keyword.js":14,"mori":12}],19:[function(_dereq_,module,exports){
+},{"./keyword.js":15,"mori":12}],20:[function(_dereq_,module,exports){
 function PropertyName(name) {
   this.name = name;
 }
@@ -1343,7 +1834,7 @@ PropertyName.prototype.equals = function (other) {
 
 module.exports = PropertyName;
 
-},{}],20:[function(_dereq_,module,exports){
+},{}],21:[function(_dereq_,module,exports){
 var equals = _dereq_('./equals.js');
 var PkgName = _dereq_('./pkg-name.js');
 
@@ -1406,7 +1897,7 @@ Symbol.inPkg = function (name, pkgName) {
 
 module.exports = Symbol;
 
-},{"./equals.js":13,"./pkg-name.js":16}],21:[function(_dereq_,module,exports){
+},{"./equals.js":14,"./pkg-name.js":17}],22:[function(_dereq_,module,exports){
 function Var(pkg, name, value) {
   this.pkg = pkg;
   this.name = name;
@@ -1429,7 +1920,7 @@ Var.prototype.toString = function () {
 
 module.exports = Var;
 
-},{}],22:[function(_dereq_,module,exports){
+},{}],23:[function(_dereq_,module,exports){
 var validNonAlphaNumeric = [
   '_',
   '.',
@@ -1476,7 +1967,7 @@ var character = {
 };
 module.exports = character;
 
-},{}],23:[function(_dereq_,module,exports){
+},{}],24:[function(_dereq_,module,exports){
 var character = _dereq_('./character.js');
 var Token = _dereq_('./token.js');
 
@@ -1806,7 +2297,7 @@ exports.lexNumberDecimals = function lexNumberDecimals(lexer) {
   }
 };
 
-},{"./character.js":22,"./token.js":27}],24:[function(_dereq_,module,exports){
+},{"./character.js":23,"./token.js":28}],25:[function(_dereq_,module,exports){
 function LexerPosition(line, column) {
   this.line = line;
   this.column = column;
@@ -1822,7 +2313,7 @@ LexerPosition.prototype.addColumn = function (position) {
 
 module.exports = LexerPosition;
 
-},{}],25:[function(_dereq_,module,exports){
+},{}],26:[function(_dereq_,module,exports){
 var LexerPosition = _dereq_('./lexer-position.js');
 var Token = _dereq_('./token.js');
 var character = _dereq_('./character.js');
@@ -1836,6 +2327,9 @@ function Lexer(input) {
   this.lastWasNewLine = false;
   this.emitted = [];
   this.nextLexerFn = lexerFns.lexWhitespace;
+
+  // If we've never read, were at column 0.
+  this._lastPosition = new LexerPosition(1, 0);
 }
 
 Lexer.prototype._startPosition = function () {
@@ -1844,8 +2338,7 @@ Lexer.prototype._startPosition = function () {
     return this.positions[0];
   }
 
-  // If we've never read, were at column 0.
-  return new LexerPosition(1, 0);
+  return this._lastPosition;
 };
 
 Lexer.prototype._currentPosition = function () {
@@ -1901,9 +2394,9 @@ Lexer.prototype._pendingText = function () {
 };
 
 Lexer.prototype.clear = function () {
-  // Remove all positions expect the last one, that's where
-  // the next token will start.
-  this.positions = [this._currentPosition()];
+  // Remove all positions in the array and store the last one separately.
+  this._lastPosition = this._currentPosition();
+  this.positions = [];
 
   // Move start position of the pending token text to
   // the next character.
@@ -1911,7 +2404,7 @@ Lexer.prototype.clear = function () {
 };
 
 Lexer.prototype._emitWithText = function (tokenType, text) {
-  var position = this._currentPosition();
+  var position = this._startPosition();
   var token = new Token(tokenType, text, position.line, position.column);
 
   this.emitted = this.emitted.concat(token);
@@ -2004,7 +2497,7 @@ Lexer.prototype.next = function () {
 
 module.exports = Lexer;
 
-},{"./character.js":22,"./lexer-fns.js":23,"./lexer-position.js":24,"./token.js":27}],26:[function(_dereq_,module,exports){
+},{"./character.js":23,"./lexer-fns.js":24,"./lexer-position.js":25,"./token.js":28}],27:[function(_dereq_,module,exports){
 function TokenPosition(line, column) {
   this.line = line;
   this.column = column;
@@ -2020,7 +2513,7 @@ TokenPosition.prototype.toString = function () {
 
 module.exports = TokenPosition;
 
-},{}],27:[function(_dereq_,module,exports){
+},{}],28:[function(_dereq_,module,exports){
 var TokenPosition = _dereq_('./token-position.js');
 
 function Token(type, text, line, column) {
@@ -2063,7 +2556,7 @@ Token.ERROR = "Error";
 
 module.exports = Token;
 
-},{"./token-position.js":26}],28:[function(_dereq_,module,exports){
+},{"./token-position.js":27}],29:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 
 exports.get = function (url) {
@@ -2087,12 +2580,12 @@ exports.get = function (url) {
   });
 };
 
-},{"es6-promise":2}],29:[function(_dereq_,module,exports){
+},{"es6-promise":2}],30:[function(_dereq_,module,exports){
 var Lexer = _dereq_('../lex/lexer.js');
 var Token = _dereq_('../lex/token.js');
 var TokenScanner = _dereq_('./token-scanner.js');
 var Symbol = _dereq_('../lang/symbol.js');
-var keyword = _dereq_('../lang/keyword.js');
+var Keyword = _dereq_('../lang/keyword.js');
 var PkgName = _dereq_('../lang/pkg-name.js');
 var MethodName = _dereq_('../lang/method-name.js');
 var PropertyName = _dereq_('../lang/property-name.js');
@@ -2117,7 +2610,7 @@ function readSimple(type, construct) {
   };
 }
 
-function symbolOrLiteral(text) {
+function symbolOrLiteral(text, meta) {
   switch (text) {
     case 'nil':
       return null;
@@ -2126,7 +2619,7 @@ function symbolOrLiteral(text) {
     case 'false':
       return false;
     default:
-      return Symbol.withoutPkg(text)
+      return Symbol.withoutPkg(text).withMeta(meta)
   }
 }
 
@@ -2138,9 +2631,14 @@ function readSymbol(reader) {
   }
 
   var splitBySlash = token.text.split('/');
+  var meta = m.hash_map(
+    Keyword.fromString(':line'),
+    token.position.line,
+    Keyword.fromString(':column'),
+    token.position.column);
 
   if (token.text === '/') {
-    return Symbol.withoutPkg('/');
+    return Symbol.withoutPkg('/').withMeta(meta);
   } else if (splitBySlash.length === 1) {
     if (token.text.indexOf('.-') === 0) {
       return new PropertyName(token.text.slice(2));
@@ -2149,13 +2647,13 @@ function readSymbol(reader) {
     }
     var splitByDot = token.text.split('.');
     if (splitByDot.length === 1) {
-      return symbolOrLiteral(token.text);
+      return symbolOrLiteral(token.text, meta);
     } else {
       return new PkgName(splitByDot);
     }
   } else if (splitBySlash.length === 2) {
     var pkgName = new PkgName.fromString(splitBySlash[0]);
-    return Symbol.inPkg(splitBySlash[1], pkgName);
+    return Symbol.inPkg(splitBySlash[1], pkgName).withMeta(meta);
   }
 }
 readerFns[Token.NAME] = readSymbol;
@@ -2282,7 +2780,7 @@ readerFns[Token.NUMBER_SIGN_PREFIX] = readNumber;
 readerFns[Token.NUMBER_INTEGER] = readNumber;
 
 readerFns[Token.KEYWORD] = readSimple(Token.KEYWORD, function (token) {
-  return keyword.fromString(token.text);
+  return Keyword.fromString(token.text);
 });
 
 // Ignored tokens.
@@ -2407,7 +2905,7 @@ Reader.readTopLevelFormsString = function (s) {
 
 module.exports = Reader;
 
-},{"../lang/keyword.js":14,"../lang/method-name.js":15,"../lang/pkg-name.js":16,"../lang/property-name.js":19,"../lang/symbol.js":20,"../lex/lexer.js":25,"../lex/token.js":27,"./token-scanner.js":30,"mori":12}],30:[function(_dereq_,module,exports){
+},{"../lang/keyword.js":15,"../lang/method-name.js":16,"../lang/pkg-name.js":17,"../lang/property-name.js":20,"../lang/symbol.js":21,"../lex/lexer.js":26,"../lex/token.js":28,"./token-scanner.js":31,"mori":12}],31:[function(_dereq_,module,exports){
 function TokenScanner(source) {
   this.source = source;
 
@@ -2460,7 +2958,7 @@ TokenScanner.prototype.peek = function () {
 
 module.exports = TokenScanner;
 
-},{}],31:[function(_dereq_,module,exports){
+},{}],32:[function(_dereq_,module,exports){
 var isInterop = _dereq_('./is-interop.js');
 var Promise = _dereq_('es6-promise').Promise;
 
@@ -2468,19 +2966,17 @@ function BrowserInterop() {
 }
 
 BrowserInterop.prototype.resolve = function (symbol) {
-  return new Promise(function (resolve, reject) {
-    if (!isInterop(symbol)) {
-      return reject(new Error('Could not resolve: ' + symbol.toString()));
-    }
+  if (!isInterop(symbol)) {
+    return Promise.reject(new Error('Could not resolve: ' + symbol.toString()));
+  }
 
-    var prop = symbol.name;
-    return resolve(window[prop]);
-  });
+  var prop = symbol.name;
+  return Promise.resolve(window[prop]);
 };
 
 module.exports = BrowserInterop;
 
-},{"./is-interop.js":34,"es6-promise":2}],32:[function(_dereq_,module,exports){
+},{"./is-interop.js":35,"es6-promise":2}],33:[function(_dereq_,module,exports){
 var http = _dereq_('../net/http.js');
 
 function BrowserLoader(base) {
@@ -2500,7 +2996,7 @@ BrowserLoader.prototype.readZapSource = function (pkgName) {
 
 module.exports = BrowserLoader;
 
-},{"../net/http.js":28}],33:[function(_dereq_,module,exports){
+},{"../net/http.js":29}],34:[function(_dereq_,module,exports){
 var m = _dereq_('mori');
 var printString = _dereq_('../lang/print-string.js');
 var Symbol = _dereq_('../lang/symbol.js');
@@ -2665,7 +3161,7 @@ module.exports = {
   create: create
 };
 
-},{"../lang/equals.js":13,"../lang/keyword.js":14,"../lang/print-string.js":18,"../lang/symbol.js":20,"es6-promise":2,"mori":12}],34:[function(_dereq_,module,exports){
+},{"../lang/equals.js":14,"../lang/keyword.js":15,"../lang/print-string.js":19,"../lang/symbol.js":21,"es6-promise":2,"mori":12}],35:[function(_dereq_,module,exports){
 var PkgName = _dereq_('../lang/pkg-name.js');
 
 var jsPkgName = PkgName.withSegments('js');
@@ -2678,7 +3174,7 @@ module.exports = function isInterop(symbol) {
   }
 };
 
-},{"../lang/pkg-name.js":16}],35:[function(_dereq_,module,exports){
+},{"../lang/pkg-name.js":17}],36:[function(_dereq_,module,exports){
 var mori = _dereq_('mori');
 var printString = _dereq_('../lang/print-string.js');
 
@@ -2705,7 +3201,7 @@ module.exports = {
   create: create
 };
 
-},{"../lang/print-string.js":18,"mori":12}],36:[function(_dereq_,module,exports){
+},{"../lang/print-string.js":19,"mori":12}],37:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 
@@ -2733,7 +3229,7 @@ module.exports = {
   create: create
 };
 
-},{"es6-promise":2,"mori":12}],37:[function(_dereq_,module,exports){
+},{"es6-promise":2,"mori":12}],38:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 var Reader = _dereq_('../reader/reader.js');
@@ -2925,23 +3421,19 @@ Runtime.prototype.resolve = function (symbol) {
 };
 
 Runtime.prototype.require = function (pkgName) {
-  var self = this;
-  return new Promise(function (resolve, reject) {
-    self._loader.readZapSource(pkgName).then(function (source) {
-      resolve(self.loadTopLevelFormsString(source));
-    }, function (err) {
-      reject(new Error('Failed to require ' + pkgName.toString() + ': ' + err));
-    });
-  });
+  var loadForms = this.loadTopLevelFormsString.bind(this);
+
+  function wrapError(err) {
+    return new Error('Failed to require ' + pkgName.toString() + ': ' + err);
+  }
+
+  return this._loader.readZapSource(pkgName).then(loadForms, wrapError);
 };
 
 Runtime.prototype.loadFile = function (path) {
-  var self = this;
-  return new Promise(function (resolve, reject) {
-    self._loader.readFile(path).then(function (source) {
-      self.loadTopLevelFormsString(source).then(resolve, reject);
-    }, reject);
-  });
+  var loadForms = this.loadTopLevelFormsString.bind(this);
+
+  return this._loader.readFile(path).then(loadForms);
 };
 
 Runtime.prototype.eval = function (value) {
@@ -2955,44 +3447,34 @@ Runtime.prototype.evalForms = function (forms) {
     return Promise.resolve(null);
   }
 
-  return new Promise(function (resolve, reject) {
-    self.eval(mori.first(forms)).then(function (evaled) {
-      self.evalForms(mori.rest(forms)).then(function (restEvaled) {
-        resolve(mori.cons(evaled, restEvaled));
-      }, reject);
-    }, reject);
+  return self.eval(mori.first(forms)).then(function (evaled) {
+    return self.evalForms(mori.rest(forms)).then(function (restEvaled) {
+      return mori.cons(evaled, restEvaled);
+    });
   });
 };
 
 Runtime.prototype.loadString = function (s) {
-  var self = this;
-
-  return new Promise(function (resolve, reject) {
-    try {
-      var value = Reader.readString(s);
-      return self.eval(value).then(resolve, reject);
-    } catch (e) {
-      return reject(e);
-    }
-  });
+  try {
+    var value = Reader.readString(s);
+    return this.eval(value);
+  } catch (e) {
+    return Promise.reject(e);
+  }
 };
 
 Runtime.prototype.loadTopLevelFormsString = function (s) {
-  var self = this;
-
-  return new Promise(function (resolve, reject) {
-    try {
-      var forms = Reader.readTopLevelFormsString(s);
-      resolve(self.evalForms(forms));
-    } catch (e) {
-      return reject(e);
-    }
-  });
+  try {
+    var forms = Reader.readTopLevelFormsString(s);
+    return this.evalForms(forms);
+  } catch (e) {
+    return Promise.reject(e);
+  }
 };
 
 module.exports = Runtime;
 
-},{"../lang/equals.js":13,"../lang/pkg-name.js":16,"../lang/pkg.js":17,"../lang/print-string.js":18,"../lang/symbol.js":20,"../net/http.js":28,"../reader/reader.js":29,"./browser-interop.js":31,"./is-interop.js":34,"./scope.js":38,"es6-promise":2,"mori":12}],38:[function(_dereq_,module,exports){
+},{"../lang/equals.js":14,"../lang/pkg-name.js":17,"../lang/pkg.js":18,"../lang/print-string.js":19,"../lang/symbol.js":21,"../net/http.js":29,"../reader/reader.js":30,"./browser-interop.js":32,"./is-interop.js":35,"./scope.js":39,"es6-promise":2,"mori":12}],39:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 var equals = _dereq_('../lang/equals.js');
@@ -3000,127 +3482,11 @@ var printString = _dereq_('../lang/print-string.js');
 var keyword = _dereq_('../lang/keyword.js');
 var Symbol = _dereq_('../lang/symbol.js');
 var closure = _dereq_('./closure.js');
-var SpecialForms = _dereq_('./special-forms.js');
+var specialForms = _dereq_('./special-forms.js');
 var MethodName = _dereq_('../lang/method-name.js');
 var methodCall = _dereq_('./method-call.js');
 var PropertyName = _dereq_('../lang/property-name.js');
 var propertyGetter = _dereq_('./property-getter.js');
-
-var specialForms = new SpecialForms();
-
-// qoute returns it's arguments unevaluated.
-specialForms.add('quote', function (scope, args) {
-  return Promise.resolve(mori.first(args));
-});
-
-// eval calls this method.
-specialForms.add('eval', function (scope, args) {
-  var form = mori.first(args);
-  return new Promise(function (resolve, reject) {
-    return scope.eval(form).then(function (data) {
-      return resolve(scope.eval(data));
-    }, reject);
-  });
-});
-
-// def does not eval the first argument if it's a symbol,
-// which is uses to create a new var in a pkg. If it is
-// something other than a symbol, it will be evaled.
-specialForms.add('def', function (scope, args) {
-  var symbol = mori.first(args);
-  var symbolPromise;
-  if (Symbol.isInstance(symbol)) {
-    symbolPromise = Promise.resolve(symbol);
-  } else {
-    symbolPromise = scope.eval(symbol);
-  }
-
-  return symbolPromise.then(function (symbol) {
-    var value = mori.first(mori.rest(args));
-    var evaled = scope.eval(value);
-    return evaled.then(function (evaled) {
-      return scope.runtime.def(symbol, evaled);
-    });
-  });
-});
-
-// let introduces a new lexical scope.
-specialForms.add('let', function (scope, args) {
-  var bindings = mori.first(args);
-  // TODO: Support implicit do.
-  var body = mori.first(mori.rest(args));
-
-  return Scope.create(bindings, scope, true).then(function (newScope) {
-    return newScope.eval(body);
-  });
-});
-//
-// fn creates a closure.
-specialForms.add('*fn', function (scope, args) {
-  return closure.create(scope, args);
-});
-
-// if does what you'd expect.
-specialForms.add('if', function (scope, args) {
-  var count = mori.count(args);
-
-  return new Promise(function (resolve, reject) {
-
-    if (count < 2) {
-      return reject(new Error('Cannot if without a condition and a true branch'));
-    }
-
-    var condition = scope.eval(mori.first(args));
-
-    condition.then(function (c) {
-      var exceptCondition = mori.rest(args);
-      var trueBranch = mori.first(exceptCondition);
-      var falseBranch;
-
-      if (count >= 3) {
-        falseBranch = mori.first(mori.rest(exceptCondition));
-      }
-
-      var conditionFalse = c === false || c === null;
-
-      if (!conditionFalse) {
-        return resolve(scope.eval(trueBranch));
-      } else if (falseBranch !== undefined) {
-        return resolve(scope.eval(falseBranch));
-      } else {
-        return resolve(null);
-      }
-    });
-  });
-});
-
-// do evaluates all expressions sequentially (using Promise.then) and
-// returns the Promise returned by the last expression.
-specialForms.add('do', function (scope, args) {
-  function evalNext(exprs) {
-    var count = mori.count(exprs);
-    if (count === 0) {
-      return null;
-    } else if (count === 1) {
-      return scope.eval(mori.first(exprs));
-    } else {
-      return scope.eval(mori.first(exprs)).then(function () {
-        return evalNext(mori.rest(exprs));
-      });
-    }
-  }
-  return evalNext(args);
-});
-
-// macroexpand runs a macro and returns the output data structure without
-// evaluating it.
-specialForms.add('macroexpand', function (scope, args) {
-  if (mori.count(args) !== 1) {
-    return Promise.reject(new Error('macroexpand takes exactly on argument'));
-  }
-
-  return scope.macroexpand(mori.first(args));
-});
 
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
@@ -3133,40 +3499,31 @@ Scope.prototype.wrap = function (bindings, evalArgs) {
 };
 
 Scope.create = function (bindings, subScope, evalArgs) {
-  return new Promise(function (resolve, reject) {
-    var count = mori.count(bindings);
+  var count = mori.count(bindings);
 
-    if (count == 0) {
-      return resolve(subScope);
-    } else if (count % 2 !== 0) {
-      return reject(new Error('Scope.create requires a bindings vector with even length'));
-    }
+  if (count == 0) {
+    return Promise.resolve(subScope);
+  } else if (count % 2 !== 0) {
+    return Promise.reject(new Error('Scope.create requires a bindings vector with even length'));
+  }
 
-    var symbol = mori.first(bindings);
-    var rest = mori.rest(bindings);
-    var value = mori.first(rest);
+  var symbol = mori.first(bindings);
+  var rest = mori.rest(bindings);
+  var value = mori.first(rest);
 
-    if (!Symbol.isInstance(symbol)) {
-      return reject(new Error(printString(symbol) + ' is not a symbol'));
-    }
+  if (!Symbol.isInstance(symbol)) {
+    return Promise.reject(new Error(printString(symbol) + ' is not a symbol'));
+  }
 
-    var key = symbol.name;
+  var valuePromise = evalArgs ? subScope.eval(value) : Promise.resolve(value);
 
-    var valuePromise;
-    if (evalArgs) {
-      valuePromise = subScope.eval(value);
-    } else {
-      valuePromise = Promise.resolve(value);
-    }
+  return valuePromise.then(function (value) {
+    var values = mori.hash_map(symbol.name, value);
 
-    valuePromise.then(function (value) {
-      var values = mori.hash_map(key, value);
-
-       Scope.create(
+      return Scope.create(
         mori.rest(rest),
         new Scope(subScope.runtime, values, subScope),
-        evalArgs).then(resolve, reject);
-    }, reject);
+        evalArgs);
   });
 }
 
@@ -3199,63 +3556,70 @@ function evalMap(scope, map) {
   });
 }
 
+function addCallAt(symbol) {
+  return function (e) {
+    e.addCallAt(symbol);
+    return Promise.reject(e);
+  };
+}
+
 Scope.prototype.eval = function (form) {
   var self = this;
   var eval = function (value) { return self.eval(value); }
-  return new Promise(function (resolve, reject) {
 
-    if (mori.is_list(form)) {
-      var seq = mori.seq(form);
-      var first = mori.first(seq);
+  if (mori.is_list(form)) {
+    var seq = mori.seq(form);
+    var first = mori.first(seq);
 
-      if (!first) {
-        return resolve(form);
+    if (!first) {
+      return Promise.resolve(form);
+    }
+
+    var addCallAtSymbol = addCallAt(first);
+
+    if (specialForms.has(first)) {
+      return specialForms.eval(self, first, seq).catch(addCallAtSymbol);
+    }
+
+    return self.eval(first).then(function (fn) {
+      if (!fn || !fn.apply) {
+        return Promise.reject(new Error(printString(fn) + ' is not a fn'));
       }
 
-      if (specialForms.has(first)) {
-        return specialForms.eval(self, first, seq).then(resolve, reject);
+      if (!!fn.isMacro && fn.isMacro()) {
+        return self.macroexpand(seq).then(eval);
+
+      } else {
+        var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
+        return Promise.all(argPromises).then(function (args) {
+          return fn.apply(null, args);
+        });
       }
+    }).catch(addCallAtSymbol);
 
-      self.eval(first).then(function (fn) {
-        if (!fn || !fn.apply) {
-          return reject(new Error(printString(fn) + ' is not a fn'));
-        }
+  } else if (mori.is_vector(form)) {
+    var promises = mori.clj_to_js(mori.map(eval, form));
 
-        if (!!fn.isMacro && fn.isMacro()) {
-          return self.macroexpand(seq).then(function (expanded) {
-            return self.eval(expanded).then(resolve, reject);
-          }, reject);
+    return Promise.all(promises).then(function (elements) {
+      var newVector = mori.vector.apply(null, elements);
+      // Transfer meta data.
+      newVector.__meta = form.__meta;
+      return newVector;
+    });
 
-        } else {
-          var argPromises = mori.into_array(mori.map(eval, mori.rest(seq)));
-          Promise.all(argPromises).then(function (args) {
-            return resolve(fn.apply(null, args));
-          }, reject);
-        }
-      }, reject);
-
-    } else if (mori.is_vector(form)) {
-      var promises = mori.clj_to_js(mori.map(eval, form));
-
-      return Promise.all(promises).then(function (elements) {
-        var newVector = mori.vector.apply(null, elements);
-        // Transfer meta data.
-        newVector.__meta = form.__meta;
-        return newVector;
-      }, reject).then(resolve, reject);
-
-    } else if (keyword.isInstance(form)) {
-      // Treat keywords (which are actually a mori hash map with only one key)
-      // different from maps in general.
-      return resolve(form);
-    } else if (mori.is_map(form)) {
-      return resolve(evalMap(self, form));
-    } else if (Symbol.isInstance(form)) {
-      // Symbols are automatically derefed.
+  } else if (keyword.isInstance(form)) {
+    // Treat keywords (which are actually a mori hash map with only one key)
+    // different from maps in general.
+    return Promise.resolve(form);
+  } else if (mori.is_map(form)) {
+    return Promise.resolve(evalMap(self, form));
+  } else if (Symbol.isInstance(form)) {
+    // Symbols are automatically derefed.
+    return new Promise(function (resolve, reject) {
       self.resolve(form).then(function (bound) {
 
         // Symbol is bound in scope.
-        return resolve(bound);
+        resolve(bound);
 
       }, function () {
 
@@ -3264,15 +3628,15 @@ Scope.prototype.eval = function (form) {
           return !!v && v.deref ? v.deref() : v;
         }).then(resolve, reject);
       });
+    });
 
-    } else if (MethodName.isInstance(form)) {
-      return resolve(methodCall.create(form));
-    } else if (PropertyName.isInstance(form)) {
-      return resolve(propertyGetter.create(form));
-    } else {
-      return resolve(form);
-    }
-  });
+  } else if (MethodName.isInstance(form)) {
+    return Promise.resolve(methodCall.create(form));
+  } else if (PropertyName.isInstance(form)) {
+    return Promise.resolve(propertyGetter.create(form));
+  } else {
+    return Promise.resolve(form);
+  }
 };
 
 Scope.prototype.macroexpand = function (seq) {
@@ -3286,55 +3650,225 @@ Scope.prototype.macroexpand = function (seq) {
 
 module.exports = Scope;
 
-},{"../lang/equals.js":13,"../lang/keyword.js":14,"../lang/method-name.js":15,"../lang/print-string.js":18,"../lang/property-name.js":19,"../lang/symbol.js":20,"./closure.js":33,"./method-call.js":35,"./property-getter.js":36,"./special-forms.js":39,"es6-promise":2,"mori":12}],39:[function(_dereq_,module,exports){
+},{"../lang/equals.js":14,"../lang/keyword.js":15,"../lang/method-name.js":16,"../lang/print-string.js":19,"../lang/property-name.js":20,"../lang/symbol.js":21,"./closure.js":34,"./method-call.js":36,"./property-getter.js":37,"./special-forms.js":40,"es6-promise":2,"mori":12}],40:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
+var Symbol = _dereq_('../lang/symbol.js');
+var Closure = _dereq_('./closure.js');
+var ZapError = _dereq_('./zap-error.js');
 
-function SpecialForms() {
-  this._fns = mori.hash_map();
+var fns = mori.hash_map();
+
+function add(name, fn) {
+  fns = mori.assoc(fns, name, fn);
 }
 
-SpecialForms.prototype.add = function (name, fn) {
-  this._fns = mori.assoc(this._fns, name, fn);
+function has(symbol) {
+  return !!symbol && mori.has_key(fns, symbol.name);
+}
+
+function eval(scope, symbol, seq) {
+  if (!symbol) {
+    return Promise.reject('symbol cannot be ' + symbol);
+  }
+  if (!seq) {
+    return Promise.reject('symbol cannot be ' + seq);
+  }
+
+  var fn = mori.get(fns, symbol.name);
+
+  if (fn) {
+    return Promise.resolve(fn(scope, mori.rest(seq)));
+  } else {
+    return Promise.reject(symbol.name + ' is not a special form');
+  }
 };
 
-SpecialForms.prototype.has = function (symbol) {
-  return !!symbol && mori.has_key(this._fns, symbol.name);
-};
+// qoute returns it's arguments unevaluated.
+add('quote', function (scope, args) {
+  return Promise.resolve(mori.first(args));
+});
 
-SpecialForms.prototype.eval = function (scope, symbol, seq) {
-  var self = this;
-  return new Promise(function (resolve, reject) {
-    if (!symbol) {
-      return reject('symbol cannot be ' + symbol);
+// the eval special form calls scope.eval two times; first to resolve symbols etc,
+// then to actually eval the data as code.
+add('eval', function (scope, args) {
+  var form = mori.first(args);
+  var eval = scope.eval.bind(scope);
+  return eval(form).then(eval);
+});
+
+// def does not eval the first argument if it's a symbol,
+// which is uses to create a new var in a pkg. If it is
+// something other than a symbol, it will be evaled.
+add('def', function (scope, args) {
+  var symbol = mori.first(args);
+
+  var symbolPromise =
+    Symbol.isInstance(symbol) ? Promise.resolve(symbol) : scope.eval(symbol);
+
+  return symbolPromise.then(function (symbol) {
+    var value = mori.first(mori.rest(args));
+    var evaled = scope.eval(value);
+    return evaled.then(function (evaled) {
+      return scope.runtime.def(symbol, evaled);
+    });
+  });
+});
+
+// let introduces a new lexical scope.
+add('let', function (scope, args) {
+  var bindings = mori.first(args);
+  // TODO: Support implicit do.
+  var body = mori.first(mori.rest(args));
+
+  return scope.wrap(bindings, true).then(function (newScope) {
+    return newScope.eval(body);
+  });
+});
+//
+// fn creates a closure.
+add('fn*', function (scope, args) {
+  return Closure.create(scope, args);
+});
+
+// if does what you'd expect.
+add('if', function (scope, args) {
+  var count = mori.count(args);
+
+  if (count < 2) {
+    return Promise.reject(new Error('Cannot if without a condition and a true branch'));
+  }
+
+  var condition = scope.eval(mori.first(args));
+
+  return condition.then(function (c) {
+    var exceptCondition = mori.rest(args);
+    var trueBranch = mori.first(exceptCondition);
+    var falseBranch;
+
+    if (count >= 3) {
+      falseBranch = mori.first(mori.rest(exceptCondition));
     }
-    if (!seq) {
-      return reject('symbol cannot be ' + seq);
-    }
 
-    var fn = mori.get(self._fns, symbol.name);
+    var conditionFalse = c === false || c === null;
 
-    if (fn) {
-      return resolve(fn(scope, mori.rest(seq)));
+    if (!conditionFalse) {
+      return scope.eval(trueBranch);
+    } else if (falseBranch !== undefined) {
+      return scope.eval(falseBranch);
     } else {
-      return reject(symbol.name + ' is not a special form');
+      return Promise.resolve(null);
     }
-  })
+  });
+});
+
+// do evaluates all expressions sequentially (using Promise.then) and
+// returns the Promise returned by the last expression.
+add('do', function (scope, args) {
+  function evalNext(exprs) {
+    var count = mori.count(exprs);
+    if (count === 0) {
+      return null;
+    } else if (count === 1) {
+      return scope.eval(mori.first(exprs));
+    } else {
+      return scope.eval(mori.first(exprs)).then(function () {
+        return evalNext(mori.rest(exprs));
+      });
+    }
+  }
+  return evalNext(args);
+});
+
+// throw creates a rejected Promise.
+add('throw*', function (scope, args) {
+  var error = mori.first(args);
+
+  return Promise.reject(new ZapError(error));
+});
+
+// try evaluates an expression and invokes the catch clause if it returns a
+// rejected Promise.
+add('try*', function (scope, args) {
+  var expr = mori.first(args);
+  var catchClause = mori.first(mori.rest(args));
+
+  return new Promise(function (resolve, reject) {
+    scope.eval(expr).then(resolve, function (e) {
+      var exceptCatch = mori.rest(catchClause);
+      var symbol = mori.first(exceptCatch);
+      var catchExpr = mori.first(mori.rest(exceptCatch));
+      var bindings = mori.vector(symbol, e);
+
+      scope.wrap(bindings, true).then(function (catchScope) {
+        catchScope.eval(catchExpr).then(resolve, reject);
+      }, reject);
+    });
+  });
+});
+
+// macroexpand runs a macro and returns the output data structure without
+// evaluating it.
+add('macroexpand', function (scope, args) {
+  if (mori.count(args) !== 1) {
+    return Promise.reject(new Error('macroexpand takes exactly on argument'));
+  }
+
+  return scope.macroexpand(mori.first(args));
+});
+
+module.exports = {
+  has: has,
+  eval: eval
 };
 
-module.exports = SpecialForms;
+},{"../lang/symbol.js":21,"./closure.js":34,"./zap-error.js":41,"es6-promise":2,"mori":12}],41:[function(_dereq_,module,exports){
+var printStackTrace = _dereq_('stacktrace-js');
+var mori = _dereq_('mori');
+var Keyword = _dereq_('../lang/keyword.js');
 
-},{"es6-promise":2,"mori":12}],40:[function(_dereq_,module,exports){
+function ZapError() {
+  var wrapped = Error.apply(this, arguments);
+  wrapped.name = 'ZapError';
+
+  this.message = wrapped.message;
+  this.stack = wrapped.stack;
+
+  return this;
+}
+
+ZapError.prototype = Object.create(Error.prototype);
+
+ZapError.prototype.addCallAt = function (symbol) {
+  var meta = symbol.__meta;
+  var line = mori.get(meta, Keyword.fromString(':line'));
+  var column = mori.get(meta, Keyword.fromString(':column'));
+
+  console.log('Adding call at ' + line + ':' + column);
+
+  // TODO: Filename!
+  var custom = '    at ' + symbol + ' (<no file>.zap:' + line + ':' + column + ')';
+  var lines = this.stack.split('\n');
+  lines = [lines[0], custom].concat(lines.slice(1));
+
+  this.stack = lines.join('\n');
+};
+
+module.exports = ZapError;
+
+},{"../lang/keyword.js":15,"mori":12,"stacktrace-js":13}],42:[function(_dereq_,module,exports){
 var Runtime = _dereq_('./runtime/runtime.js');
 var BrowserLoader = _dereq_('./runtime/browser-loader.js');
 var printString = _dereq_('./lang/print-string.js');
+var ZapError = _dereq_('./runtime/zap-error.js');
 
 module.exports = {
   printString: printString,
   Runtime: Runtime,
-  BrowserLoader: BrowserLoader
+  BrowserLoader: BrowserLoader,
+  ZapError: ZapError
 };
 
-},{"./lang/print-string.js":18,"./runtime/browser-loader.js":32,"./runtime/runtime.js":37}]},{},[40])
-(40)
+},{"./lang/print-string.js":19,"./runtime/browser-loader.js":33,"./runtime/runtime.js":38,"./runtime/zap-error.js":41}]},{},[42])
+(42)
 });
