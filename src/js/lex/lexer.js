@@ -11,6 +11,9 @@ function Lexer(input) {
   this.lastWasNewLine = false;
   this.emitted = [];
   this.nextLexerFn = lexerFns.lexWhitespace;
+
+  // If we've never read, were at column 0.
+  this._lastPosition = new LexerPosition(1, 0);
 }
 
 Lexer.prototype._startPosition = function () {
@@ -19,8 +22,7 @@ Lexer.prototype._startPosition = function () {
     return this.positions[0];
   }
 
-  // If we've never read, were at column 0.
-  return new LexerPosition(1, 0);
+  return this._lastPosition;
 };
 
 Lexer.prototype._currentPosition = function () {
@@ -76,9 +78,9 @@ Lexer.prototype._pendingText = function () {
 };
 
 Lexer.prototype.clear = function () {
-  // Remove all positions expect the last one, that's where
-  // the next token will start.
-  this.positions = [this._currentPosition()];
+  // Remove all positions in the array and store the last one separately.
+  this._lastPosition = this._currentPosition();
+  this.positions = [];
 
   // Move start position of the pending token text to
   // the next character.
@@ -86,7 +88,7 @@ Lexer.prototype.clear = function () {
 };
 
 Lexer.prototype._emitWithText = function (tokenType, text) {
-  var position = this._currentPosition();
+  var position = this._startPosition();
   var token = new Token(tokenType, text, position.line, position.column);
 
   this.emitted = this.emitted.concat(token);

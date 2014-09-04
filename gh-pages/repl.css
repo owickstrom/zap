@@ -22,6 +22,11 @@ body {
   margin: 0 0 .5em;
   padding: .5em 1em;
   background: #333;
+  color: #ccc;
+}
+
+.options {
+  padding: 0 1rem;
 }
 
 header > h1 {
@@ -50,8 +55,16 @@ header > a {
   color: #888 !important;
 }
 
-.error {
+.error,
+.zap-error {
   color: #f43 !important;
+  transition: color .5s ease;
+}
+.highlight-zap-sources .error {
+  color: rgba(255, 68, 51, .5) !important;
+}
+.highlight-zap-sources .zap-error {
+  font-weight: bold;
 }
 
 .cm-s-tomorrow-night-eighties .CodeMirror-gutters,

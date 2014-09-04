@@ -2,6 +2,7 @@ var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var Symbol = require('../lang/symbol.js');
 var Closure = require('./closure.js');
+var ZapError = require('./zap-error.js');
 
 var fns = mori.hash_map();
 
@@ -130,10 +131,7 @@ add('do', function (scope, args) {
 add('throw*', function (scope, args) {
   var error = mori.first(args);
 
-  // Make sure it's an Error.
-  error = typeof error === 'string' ? new Error(error) : error;
-
-  return Promise.reject(error);
+  return Promise.reject(new ZapError(error));
 });
 
 // try evaluates an expression and invokes the catch clause if it returns a

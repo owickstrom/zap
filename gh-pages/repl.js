@@ -12,7 +12,15 @@ var rt = new zap.Runtime(loader);
 
 function printError(err) {
   console.error(err.message, err.stack);
-  if (err instanceof Error) {
+  if (err instanceof zap.ZapError) {
+    err.stack.split('\n').forEach(function (line) {
+      if (/\(.+?\.zap:/.test(line)) {
+        repl.print(line, 'zap-error');
+      } else {
+        repl.print(line, 'error');
+      }
+    });
+  } else if (err instanceof Error) {
     repl.print( err.stack, 'error');
   } else {
     repl.print(JSON.stringify(err), 'error');
@@ -28,3 +36,7 @@ rt.start().then(function () {
     }, printError);
   };
 }, printError);
+
+$('#highlight-zap-sources').click(function () {
+  $('main').toggleClass('highlight-zap-sources', $(this).prop('checked'));
+});

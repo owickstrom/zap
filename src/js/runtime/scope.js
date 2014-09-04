@@ -79,6 +79,13 @@ function evalMap(scope, map) {
   });
 }
 
+function addCallAt(symbol) {
+  return function (e) {
+    e.addCallAt(symbol);
+    return Promise.reject(e);
+  };
+}
+
 Scope.prototype.eval = function (form) {
   var self = this;
   var eval = function (value) { return self.eval(value); }
@@ -91,8 +98,10 @@ Scope.prototype.eval = function (form) {
       return Promise.resolve(form);
     }
 
+    var addCallAtSymbol = addCallAt(first);
+
     if (specialForms.has(first)) {
-      return specialForms.eval(self, first, seq);
+      return specialForms.eval(self, first, seq).catch(addCallAtSymbol);
     }
 
     return self.eval(first).then(function (fn) {
@@ -109,7 +118,7 @@ Scope.prototype.eval = function (form) {
           return fn.apply(null, args);
         });
       }
-    });
+    }).catch(addCallAtSymbol);
 
   } else if (mori.is_vector(form)) {
     var promises = mori.clj_to_js(mori.map(eval, form));

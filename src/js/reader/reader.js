@@ -2,7 +2,7 @@ var Lexer = require('../lex/lexer.js');
 var Token = require('../lex/token.js');
 var TokenScanner = require('./token-scanner.js');
 var Symbol = require('../lang/symbol.js');
-var keyword = require('../lang/keyword.js');
+var Keyword = require('../lang/keyword.js');
 var PkgName = require('../lang/pkg-name.js');
 var MethodName = require('../lang/method-name.js');
 var PropertyName = require('../lang/property-name.js');
@@ -27,7 +27,7 @@ function readSimple(type, construct) {
   };
 }
 
-function symbolOrLiteral(text) {
+function symbolOrLiteral(text, meta) {
   switch (text) {
     case 'nil':
       return null;
@@ -36,7 +36,7 @@ function symbolOrLiteral(text) {
     case 'false':
       return false;
     default:
-      return Symbol.withoutPkg(text)
+      return Symbol.withoutPkg(text).withMeta(meta)
   }
 }
 
@@ -48,9 +48,14 @@ function readSymbol(reader) {
   }
 
   var splitBySlash = token.text.split('/');
+  var meta = m.hash_map(
+    Keyword.fromString(':line'),
+    token.position.line,
+    Keyword.fromString(':column'),
+    token.position.column);
 
   if (token.text === '/') {
-    return Symbol.withoutPkg('/');
+    return Symbol.withoutPkg('/').withMeta(meta);
   } else if (splitBySlash.length === 1) {
     if (token.text.indexOf('.-') === 0) {
       return new PropertyName(token.text.slice(2));
@@ -59,13 +64,13 @@ function readSymbol(reader) {
     }
     var splitByDot = token.text.split('.');
     if (splitByDot.length === 1) {
-      return symbolOrLiteral(token.text);
+      return symbolOrLiteral(token.text, meta);
     } else {
       return new PkgName(splitByDot);
     }
   } else if (splitBySlash.length === 2) {
     var pkgName = new PkgName.fromString(splitBySlash[0]);
-    return Symbol.inPkg(splitBySlash[1], pkgName);
+    return Symbol.inPkg(splitBySlash[1], pkgName).withMeta(meta);
   }
 }
 readerFns[Token.NAME] = readSymbol;
@@ -192,7 +197,7 @@ readerFns[Token.NUMBER_SIGN_PREFIX] = readNumber;
 readerFns[Token.NUMBER_INTEGER] = readNumber;
 
 readerFns[Token.KEYWORD] = readSimple(Token.KEYWORD, function (token) {
-  return keyword.fromString(token.text);
+  return Keyword.fromString(token.text);
 });
 
 // Ignored tokens.
