@@ -1,4 +1,5 @@
 var Promise = require('es6-promise').Promise;
+var ZapError = require('../lang/zap-error.js');
 
 exports.get = function (url) {
   return new Promise(function (resolve, reject) {
@@ -12,7 +13,7 @@ exports.get = function (url) {
         if (xhr.status === 200) {
           return resolve(o);
         } else {
-          return reject(o);
+          return reject(new ZapError('GET failed: HTTP ' + o.status));
         }
       }
     };

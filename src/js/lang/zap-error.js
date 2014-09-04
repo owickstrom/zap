@@ -1,6 +1,6 @@
 var printStackTrace = require('stacktrace-js');
 var mori = require('mori');
-var Keyword = require('../lang/keyword.js');
+var Keyword = require('./keyword.js');
 
 function ZapError() {
   var wrapped = Error.apply(this, arguments);
@@ -18,8 +18,6 @@ ZapError.prototype.addCallAt = function (symbol) {
   var meta = symbol.__meta;
   var line = mori.get(meta, Keyword.fromString(':line'));
   var column = mori.get(meta, Keyword.fromString(':column'));
-
-  console.log('Adding call at ' + line + ':' + column);
 
   // TODO: Filename!
   var custom = '    at ' + symbol + ' (<no file>.zap:' + line + ':' + column + ')';
