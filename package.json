@@ -19,7 +19,8 @@
   "homepage": "https://github.com/owickstrom/zap",
   "dependencies": {
     "browserify": "~4",
-    "mori": "~0.2.9"
+    "mori": "~0.2.9",
+    "chalk": "~0.5.1"
   },
   "devDependencies": {
     "browserify": "~4",

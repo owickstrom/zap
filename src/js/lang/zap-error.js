@@ -29,6 +29,7 @@ ZapError.prototype.addCallAt = function (symbol) {
 
   var custom = '    at ' + symbol + ' (' + file + ':' + line + ':' + column + ')';
   var lines = this.stack.split('\n');
+  // TODO: Use splice
   lines = [lines[0], custom].concat(lines.slice(1));
 
   this.stack = lines.join('\n');
