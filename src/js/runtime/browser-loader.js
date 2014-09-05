@@ -11,7 +11,10 @@ BrowserLoader.prototype.readZapSource = function (pkgName) {
   var url = self._base + '/' + relPath;
 
   return http.get(url).then(function (result) {
-    return result.data;
+    return {
+      contents: result.data,
+      file: url
+    };
   });
 }
 

@@ -83,8 +83,7 @@ function evalMap(scope, map) {
 function addCallAt(symbol) {
   return function (e) {
     if (!(e instanceof ZapError)) {
-      console.error(e);
-      e = new ZapError()
+      e = new ZapError(e);
     }
     e.addCallAt(symbol);
     return Promise.reject(e);
