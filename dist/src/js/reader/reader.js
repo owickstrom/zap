@@ -49,6 +49,8 @@ function readSymbol(reader) {
 
   var splitBySlash = token.text.split('/');
   var meta = m.hash_map(
+    Keyword.fromString(':file'),
+    reader.file,
     Keyword.fromString(':line'),
     token.position.line,
     Keyword.fromString(':column'),
@@ -238,8 +240,9 @@ readerFns[Token.QUOTE] = makeReaderMacro(Token.QUOTE, function (inner) {
   return m.list(Symbol.withoutPkg('quote'), inner);
 });
 
-function Reader(scanner) {
+function Reader(scanner, file) {
   this.scanner = scanner;
+  this.file = file;
 }
 
 Reader.prototype.unexpectedToken = function (token) {
@@ -306,17 +309,30 @@ Reader.prototype.readTopLevelForms = function () {
   return forms;
 };
 
-Reader.readString = function (s) {
-  var lexer = new Lexer(s);
+function inputToObject(input) {
+  if (typeof input === 'string') {
+    return {
+      contents: input,
+      file: null
+    };
+  } else {
+    return input;
+  }
+}
+
+Reader.readString = function (input) {
+  input = inputToObject(input);
+  var lexer = new Lexer(input.contents);
   var scanner = new TokenScanner(lexer);
-  var reader = new Reader(scanner)
+  var reader = new Reader(scanner, input.file);
   return reader.read();
 };
 
-Reader.readTopLevelFormsString = function (s) {
-  var lexer = new Lexer(s);
+Reader.readTopLevelFormsString = function (input) {
+  input = inputToObject(input);
+  var lexer = new Lexer(input.contents);
   var scanner = new TokenScanner(lexer);
-  var reader = new Reader(scanner)
+  var reader = new Reader(scanner, input.file);
   return reader.readTopLevelForms();
 };
 

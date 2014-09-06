@@ -1921,6 +1921,79 @@ Var.prototype.toString = function () {
 module.exports = Var;
 
 },{}],23:[function(_dereq_,module,exports){
+var printStackTrace = _dereq_('stacktrace-js');
+var mori = _dereq_('mori');
+var Keyword = _dereq_('./keyword.js');
+
+function ZapError() {
+  var wrapped;
+
+  if (arguments.length === 1 && arguments[0] instanceof Error) {
+    Error.apply(this);
+    wrapped = arguments[0];
+  } else {
+    wrapped = Error.apply(this, arguments);
+    wrapped.name = 'ZapError';
+  }
+
+  this.message = wrapped.message;
+  this.stack = wrapped.stack;
+
+  return this;
+}
+
+ZapError.prototype = Object.create(Error.prototype);
+
+ZapError.prototype.addCallAt = function (symbol) {
+  var meta = symbol.__meta;
+  var file = mori.get(meta, Keyword.fromString(':file')) || '<no-file>.zap';
+  var line = mori.get(meta, Keyword.fromString(':line'));
+  var column = mori.get(meta, Keyword.fromString(':column'));
+
+  var custom = '    at ' + symbol + ' (' + file + ':' + line + ':' + column + ')';
+  var lines = this.stack.split('\n');
+  // TODO: Use splice
+  lines = [lines[0], custom].concat(lines.slice(1));
+
+  this.stack = lines.join('\n');
+};
+
+/*
+ * Returns an array of objects that describe each line in the stack trace:
+ * &lt;pre&gt;
+ * [
+ *   {
+ *     text: '...',
+ *     highlighted: true
+ *   },
+ *   ...
+ * ]
+ * &lt;/pre&gt;
+ */
+ZapError.prototype.getHighlightedLinesMarked = function () {
+  var marked = [];
+  var lines = this.stack.split('\n');
+
+  // First line is always highlighted.
+  marked.push({
+    text: lines[0],
+    highlighted: true
+  });
+
+  lines.slice(1).forEach(function (line) {
+    // Lines containing .zap are highlighted.
+    marked.push({
+      text: line,
+      highlighted: /\(.+?\.zap:/.test(line)
+    })
+  });
+
+  return marked;
+}
+
+module.exports = ZapError;
+
+},{"./keyword.js":15,"mori":12,"stacktrace-js":13}],24:[function(_dereq_,module,exports){
 var validNonAlphaNumeric = [
   '_',
   '.',
@@ -1967,7 +2040,7 @@ var character = {
 };
 module.exports = character;
 
-},{}],24:[function(_dereq_,module,exports){
+},{}],25:[function(_dereq_,module,exports){
 var character = _dereq_('./character.js');
 var Token = _dereq_('./token.js');
 
@@ -2297,7 +2370,7 @@ exports.lexNumberDecimals = function lexNumberDecimals(lexer) {
   }
 };
 
-},{"./character.js":23,"./token.js":28}],25:[function(_dereq_,module,exports){
+},{"./character.js":24,"./token.js":29}],26:[function(_dereq_,module,exports){
 function LexerPosition(line, column) {
   this.line = line;
   this.column = column;
@@ -2313,7 +2386,7 @@ LexerPosition.prototype.addColumn = function (position) {
 
 module.exports = LexerPosition;
 
-},{}],26:[function(_dereq_,module,exports){
+},{}],27:[function(_dereq_,module,exports){
 var LexerPosition = _dereq_('./lexer-position.js');
 var Token = _dereq_('./token.js');
 var character = _dereq_('./character.js');
@@ -2497,7 +2570,7 @@ Lexer.prototype.next = function () {
 
 module.exports = Lexer;
 
-},{"./character.js":23,"./lexer-fns.js":24,"./lexer-position.js":25,"./token.js":28}],27:[function(_dereq_,module,exports){
+},{"./character.js":24,"./lexer-fns.js":25,"./lexer-position.js":26,"./token.js":29}],28:[function(_dereq_,module,exports){
 function TokenPosition(line, column) {
   this.line = line;
   this.column = column;
@@ -2513,7 +2586,7 @@ TokenPosition.prototype.toString = function () {
 
 module.exports = TokenPosition;
 
-},{}],28:[function(_dereq_,module,exports){
+},{}],29:[function(_dereq_,module,exports){
 var TokenPosition = _dereq_('./token-position.js');
 
 function Token(type, text, line, column) {
@@ -2556,8 +2629,9 @@ Token.ERROR = "Error";
 
 module.exports = Token;
 
-},{"./token-position.js":27}],29:[function(_dereq_,module,exports){
+},{"./token-position.js":28}],30:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
+var ZapError = _dereq_('../lang/zap-error.js');
 
 exports.get = function (url) {
   return new Promise(function (resolve, reject) {
@@ -2571,7 +2645,7 @@ exports.get = function (url) {
         if (xhr.status === 200) {
           return resolve(o);
         } else {
-          return reject(o);
+          return reject(new ZapError('GET failed: HTTP ' + o.status));
         }
       }
     };
@@ -2580,7 +2654,7 @@ exports.get = function (url) {
   });
 };
 
-},{"es6-promise":2}],30:[function(_dereq_,module,exports){
+},{"../lang/zap-error.js":23,"es6-promise":2}],31:[function(_dereq_,module,exports){
 var Lexer = _dereq_('../lex/lexer.js');
 var Token = _dereq_('../lex/token.js');
 var TokenScanner = _dereq_('./token-scanner.js');
@@ -2632,6 +2706,8 @@ function readSymbol(reader) {
 
   var splitBySlash = token.text.split('/');
   var meta = m.hash_map(
+    Keyword.fromString(':file'),
+    reader.file,
     Keyword.fromString(':line'),
     token.position.line,
     Keyword.fromString(':column'),
@@ -2821,8 +2897,9 @@ readerFns[Token.QUOTE] = makeReaderMacro(Token.QUOTE, function (inner) {
   return m.list(Symbol.withoutPkg('quote'), inner);
 });
 
-function Reader(scanner) {
+function Reader(scanner, file) {
   this.scanner = scanner;
+  this.file = file;
 }
 
 Reader.prototype.unexpectedToken = function (token) {
@@ -2889,23 +2966,36 @@ Reader.prototype.readTopLevelForms = function () {
   return forms;
 };
 
-Reader.readString = function (s) {
-  var lexer = new Lexer(s);
+function inputToObject(input) {
+  if (typeof input === 'string') {
+    return {
+      contents: input,
+      file: null
+    };
+  } else {
+    return input;
+  }
+}
+
+Reader.readString = function (input) {
+  input = inputToObject(input);
+  var lexer = new Lexer(input.contents);
   var scanner = new TokenScanner(lexer);
-  var reader = new Reader(scanner)
+  var reader = new Reader(scanner, input.file);
   return reader.read();
 };
 
-Reader.readTopLevelFormsString = function (s) {
-  var lexer = new Lexer(s);
+Reader.readTopLevelFormsString = function (input) {
+  input = inputToObject(input);
+  var lexer = new Lexer(input.contents);
   var scanner = new TokenScanner(lexer);
-  var reader = new Reader(scanner)
+  var reader = new Reader(scanner, input.file);
   return reader.readTopLevelForms();
 };
 
 module.exports = Reader;
 
-},{"../lang/keyword.js":15,"../lang/method-name.js":16,"../lang/pkg-name.js":17,"../lang/property-name.js":20,"../lang/symbol.js":21,"../lex/lexer.js":26,"../lex/token.js":28,"./token-scanner.js":31,"mori":12}],31:[function(_dereq_,module,exports){
+},{"../lang/keyword.js":15,"../lang/method-name.js":16,"../lang/pkg-name.js":17,"../lang/property-name.js":20,"../lang/symbol.js":21,"../lex/lexer.js":27,"../lex/token.js":29,"./token-scanner.js":32,"mori":12}],32:[function(_dereq_,module,exports){
 function TokenScanner(source) {
   this.source = source;
 
@@ -2958,7 +3048,7 @@ TokenScanner.prototype.peek = function () {
 
 module.exports = TokenScanner;
 
-},{}],32:[function(_dereq_,module,exports){
+},{}],33:[function(_dereq_,module,exports){
 var isInterop = _dereq_('./is-interop.js');
 var Promise = _dereq_('es6-promise').Promise;
 
@@ -2976,7 +3066,7 @@ BrowserInterop.prototype.resolve = function (symbol) {
 
 module.exports = BrowserInterop;
 
-},{"./is-interop.js":35,"es6-promise":2}],33:[function(_dereq_,module,exports){
+},{"./is-interop.js":36,"es6-promise":2}],34:[function(_dereq_,module,exports){
 var http = _dereq_('../net/http.js');
 
 function BrowserLoader(base) {
@@ -2990,13 +3080,16 @@ BrowserLoader.prototype.readZapSource = function (pkgName) {
   var url = self._base + '/' + relPath;
 
   return http.get(url).then(function (result) {
-    return result.data;
+    return {
+      contents: result.data,
+      file: url
+    };
   });
 }
 
 module.exports = BrowserLoader;
 
-},{"../net/http.js":29}],34:[function(_dereq_,module,exports){
+},{"../net/http.js":30}],35:[function(_dereq_,module,exports){
 var m = _dereq_('mori');
 var printString = _dereq_('../lang/print-string.js');
 var Symbol = _dereq_('../lang/symbol.js');
@@ -3161,7 +3254,7 @@ module.exports = {
   create: create
 };
 
-},{"../lang/equals.js":14,"../lang/keyword.js":15,"../lang/print-string.js":19,"../lang/symbol.js":21,"es6-promise":2,"mori":12}],35:[function(_dereq_,module,exports){
+},{"../lang/equals.js":14,"../lang/keyword.js":15,"../lang/print-string.js":19,"../lang/symbol.js":21,"es6-promise":2,"mori":12}],36:[function(_dereq_,module,exports){
 var PkgName = _dereq_('../lang/pkg-name.js');
 
 var jsPkgName = PkgName.withSegments('js');
@@ -3174,7 +3267,7 @@ module.exports = function isInterop(symbol) {
   }
 };
 
-},{"../lang/pkg-name.js":17}],36:[function(_dereq_,module,exports){
+},{"../lang/pkg-name.js":17}],37:[function(_dereq_,module,exports){
 var mori = _dereq_('mori');
 var printString = _dereq_('../lang/print-string.js');
 
@@ -3201,7 +3294,7 @@ module.exports = {
   create: create
 };
 
-},{"../lang/print-string.js":19,"mori":12}],37:[function(_dereq_,module,exports){
+},{"../lang/print-string.js":19,"mori":12}],38:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 
@@ -3229,7 +3322,7 @@ module.exports = {
   create: create
 };
 
-},{"es6-promise":2,"mori":12}],38:[function(_dereq_,module,exports){
+},{"es6-promise":2,"mori":12}],39:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 var Reader = _dereq_('../reader/reader.js');
@@ -3474,12 +3567,12 @@ Runtime.prototype.loadTopLevelFormsString = function (s) {
 
 module.exports = Runtime;
 
-},{"../lang/equals.js":14,"../lang/pkg-name.js":17,"../lang/pkg.js":18,"../lang/print-string.js":19,"../lang/symbol.js":21,"../net/http.js":29,"../reader/reader.js":30,"./browser-interop.js":32,"./is-interop.js":35,"./scope.js":39,"es6-promise":2,"mori":12}],39:[function(_dereq_,module,exports){
+},{"../lang/equals.js":14,"../lang/pkg-name.js":17,"../lang/pkg.js":18,"../lang/print-string.js":19,"../lang/symbol.js":21,"../net/http.js":30,"../reader/reader.js":31,"./browser-interop.js":33,"./is-interop.js":36,"./scope.js":40,"es6-promise":2,"mori":12}],40:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 var equals = _dereq_('../lang/equals.js');
 var printString = _dereq_('../lang/print-string.js');
-var keyword = _dereq_('../lang/keyword.js');
+var Keyword = _dereq_('../lang/keyword.js');
 var Symbol = _dereq_('../lang/symbol.js');
 var closure = _dereq_('./closure.js');
 var specialForms = _dereq_('./special-forms.js');
@@ -3487,6 +3580,7 @@ var MethodName = _dereq_('../lang/method-name.js');
 var methodCall = _dereq_('./method-call.js');
 var PropertyName = _dereq_('../lang/property-name.js');
 var propertyGetter = _dereq_('./property-getter.js');
+var ZapError = _dereq_('../lang/zap-error.js');
 
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
@@ -3558,6 +3652,9 @@ function evalMap(scope, map) {
 
 function addCallAt(symbol) {
   return function (e) {
+    if (!(e instanceof ZapError)) {
+      e = new ZapError(e);
+    }
     e.addCallAt(symbol);
     return Promise.reject(e);
   };
@@ -3607,7 +3704,7 @@ Scope.prototype.eval = function (form) {
       return newVector;
     });
 
-  } else if (keyword.isInstance(form)) {
+  } else if (Keyword.isInstance(form)) {
     // Treat keywords (which are actually a mori hash map with only one key)
     // different from maps in general.
     return Promise.resolve(form);
@@ -3650,12 +3747,12 @@ Scope.prototype.macroexpand = function (seq) {
 
 module.exports = Scope;
 
-},{"../lang/equals.js":14,"../lang/keyword.js":15,"../lang/method-name.js":16,"../lang/print-string.js":19,"../lang/property-name.js":20,"../lang/symbol.js":21,"./closure.js":34,"./method-call.js":36,"./property-getter.js":37,"./special-forms.js":40,"es6-promise":2,"mori":12}],40:[function(_dereq_,module,exports){
+},{"../lang/equals.js":14,"../lang/keyword.js":15,"../lang/method-name.js":16,"../lang/print-string.js":19,"../lang/property-name.js":20,"../lang/symbol.js":21,"../lang/zap-error.js":23,"./closure.js":35,"./method-call.js":37,"./property-getter.js":38,"./special-forms.js":41,"es6-promise":2,"mori":12}],41:[function(_dereq_,module,exports){
 var Promise = _dereq_('es6-promise').Promise;
 var mori = _dereq_('mori');
 var Symbol = _dereq_('../lang/symbol.js');
 var Closure = _dereq_('./closure.js');
-var ZapError = _dereq_('./zap-error.js');
+var ZapError = _dereq_('../lang/zap-error.js');
 
 var fns = mori.hash_map();
 
@@ -3822,45 +3919,11 @@ module.exports = {
   eval: eval
 };
 
-},{"../lang/symbol.js":21,"./closure.js":34,"./zap-error.js":41,"es6-promise":2,"mori":12}],41:[function(_dereq_,module,exports){
-var printStackTrace = _dereq_('stacktrace-js');
-var mori = _dereq_('mori');
-var Keyword = _dereq_('../lang/keyword.js');
-
-function ZapError() {
-  var wrapped = Error.apply(this, arguments);
-  wrapped.name = 'ZapError';
-
-  this.message = wrapped.message;
-  this.stack = wrapped.stack;
-
-  return this;
-}
-
-ZapError.prototype = Object.create(Error.prototype);
-
-ZapError.prototype.addCallAt = function (symbol) {
-  var meta = symbol.__meta;
-  var line = mori.get(meta, Keyword.fromString(':line'));
-  var column = mori.get(meta, Keyword.fromString(':column'));
-
-  console.log('Adding call at ' + line + ':' + column);
-
-  // TODO: Filename!
-  var custom = '    at ' + symbol + ' (<no file>.zap:' + line + ':' + column + ')';
-  var lines = this.stack.split('\n');
-  lines = [lines[0], custom].concat(lines.slice(1));
-
-  this.stack = lines.join('\n');
-};
-
-module.exports = ZapError;
-
-},{"../lang/keyword.js":15,"mori":12,"stacktrace-js":13}],42:[function(_dereq_,module,exports){
+},{"../lang/symbol.js":21,"../lang/zap-error.js":23,"./closure.js":35,"es6-promise":2,"mori":12}],42:[function(_dereq_,module,exports){
 var Runtime = _dereq_('./runtime/runtime.js');
 var BrowserLoader = _dereq_('./runtime/browser-loader.js');
 var printString = _dereq_('./lang/print-string.js');
-var ZapError = _dereq_('./runtime/zap-error.js');
+var ZapError = _dereq_('./lang/zap-error.js');
 
 module.exports = {
   printString: printString,
@@ -3869,6 +3932,6 @@ module.exports = {
   ZapError: ZapError
 };
 
-},{"./lang/print-string.js":19,"./runtime/browser-loader.js":33,"./runtime/runtime.js":38,"./runtime/zap-error.js":41}]},{},[42])
+},{"./lang/print-string.js":19,"./lang/zap-error.js":23,"./runtime/browser-loader.js":34,"./runtime/runtime.js":39}]},{},[42])
 (42)
 });

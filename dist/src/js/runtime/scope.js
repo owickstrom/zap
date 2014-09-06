@@ -2,7 +2,7 @@ var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var equals = require('../lang/equals.js');
 var printString = require('../lang/print-string.js');
-var keyword = require('../lang/keyword.js');
+var Keyword = require('../lang/keyword.js');
 var Symbol = require('../lang/symbol.js');
 var closure = require('./closure.js');
 var specialForms = require('./special-forms.js');
@@ -10,6 +10,7 @@ var MethodName = require('../lang/method-name.js');
 var methodCall = require('./method-call.js');
 var PropertyName = require('../lang/property-name.js');
 var propertyGetter = require('./property-getter.js');
+var ZapError = require('../lang/zap-error.js');
 
 function Scope(runtime, values, subScope) {
   this.runtime = runtime;
@@ -81,6 +82,9 @@ function evalMap(scope, map) {
 
 function addCallAt(symbol) {
   return function (e) {
+    if (!(e instanceof ZapError)) {
+      e = new ZapError(e);
+    }
     e.addCallAt(symbol);
     return Promise.reject(e);
   };
@@ -130,7 +134,7 @@ Scope.prototype.eval = function (form) {
       return newVector;
     });
 
-  } else if (keyword.isInstance(form)) {
+  } else if (Keyword.isInstance(form)) {
     // Treat keywords (which are actually a mori hash map with only one key)
     // different from maps in general.
     return Promise.resolve(form);

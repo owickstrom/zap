@@ -122,6 +122,17 @@ describe('reader', function () {
 
       expect(m.get(meta, Keyword.fromString(':line'))).to.equal(1);
       expect(m.get(meta, Keyword.fromString(':column'))).to.equal(1);
+      expect(m.get(meta, Keyword.fromString(':file'))).to.equal(null);
+    });
+
+    it('adds file metadata to symbols if file is specified', function () {
+      var read = Reader.readString({
+        contents: 'hello',
+        file: 'test.zap'
+      });
+      var meta = read.__meta;
+
+      expect(m.get(meta, Keyword.fromString(':file'))).to.equal('test.zap');
     });
 
     it('throws an error on empty name', function () {

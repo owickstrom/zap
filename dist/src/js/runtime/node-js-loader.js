@@ -6,7 +6,7 @@ function NodeJSLoader() {
 }
 
 NodeJSLoader.prototype.readZapSource = function (pkgName) {
-  var base = __dirname;
+  var base = path.resolve(__dirname, '../../zap');
 
   var segments = pkgName.segmentsAsArray();
   var fileName = segments[segments.length - 1] + '.zap';
@@ -25,7 +25,10 @@ NodeJSLoader.prototype.readFile = function (p) {
       if (err) {
         return reject(err);
       } else {
-        return resolve(data);
+        return resolve({
+          contents: data,
+          file: p
+        });
       }
     });
   });

@@ -13,11 +13,11 @@ var rt = new zap.Runtime(loader);
 function printError(err) {
   console.error(err.message, err.stack);
   if (err instanceof zap.ZapError) {
-    err.stack.split('\n').forEach(function (line) {
-      if (/\(.+?\.zap:/.test(line)) {
-        repl.print(line, 'zap-error');
+    err.getHighlightedLinesMarked().forEach(function (line) {
+      if (line.highlighted) {
+        repl.print(line.text, 'zap-error');
       } else {
-        repl.print(line, 'error');
+        repl.print(line.text, 'error');
       }
     });
   } else if (err instanceof Error) {

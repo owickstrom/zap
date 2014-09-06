@@ -2,7 +2,7 @@ var Promise = require('es6-promise').Promise;
 var mori = require('mori');
 var Symbol = require('../lang/symbol.js');
 var Closure = require('./closure.js');
-var ZapError = require('./zap-error.js');
+var ZapError = require('../lang/zap-error.js');
 
 var fns = mori.hash_map();
 
