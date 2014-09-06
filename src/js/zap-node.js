@@ -19,18 +19,20 @@ if (args.length < 3) {
 var command = args[1];
 var file = args[2];
 
+function highlightLine(marked) {
+  if (marked.highlighted) {
+    return chalk.red(marked.text);
+  } else {
+    return chalk.gray(marked.text);
+  }
+}
+
 function printError(err) {
   if (err instanceof ZapError) {
-    var lines = err.stack.split('\n');
-    var s = chalk.red.underline.bold(lines[0]) + '\n';
-
-    lines.slice(1).forEach(function (line) {
-      if (/\(.+?\.zap:/.test(line)) {
-        s += chalk.red(line) + '\n';
-      } else {
-        s += chalk.gray(line) + '\n';
-      }
-    });
+    var s = err
+      .getHighlightedLinesMarked()
+      .map(highlightLine)
+      .join('\n');
     console.error(s);
   } else {
     console.error(err);

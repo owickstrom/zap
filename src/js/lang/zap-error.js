@@ -35,4 +35,37 @@ ZapError.prototype.addCallAt = function (symbol) {
   this.stack = lines.join('\n');
 };
 
+/*
+ * Returns an array of objects that describe each line in the stack trace:
+ * &lt;pre&gt;
+ * [
+ *   {
+ *     text: '...',
+ *     highlighted: true
+ *   },
+ *   ...
+ * ]
+ * &lt;/pre&gt;
+ */
+ZapError.prototype.getHighlightedLinesMarked = function () {
+  var marked = [];
+  var lines = this.stack.split('\n');
+
+  // First line is always highlighted.
+  marked.push({
+    text: lines[0],
+    highlighted: true
+  });
+
+  lines.slice(1).forEach(function (line) {
+    // Lines containing .zap are highlighted.
+    marked.push({
+      text: line,
+      highlighted: /\(.+?\.zap:/.test(line)
+    })
+  });
+
+  return marked;
+}
+
 module.exports = ZapError;
