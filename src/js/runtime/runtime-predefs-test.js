@@ -172,5 +172,15 @@ describe('runtime', function () {
       });
     });
 
+    it('instantiates with new', function () {
+      window.Test = function (msg) {
+        this.msg = msg;
+      }
+      return rt.loadString('(new js/Test "hello")').then(function (e) {
+        expect(e).to.be.an.instanceof(window.Test);
+        expect(e.msg).to.equal('hello');
+      });
+    });
+
   });
 });

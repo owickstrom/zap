@@ -57,6 +57,10 @@
   "Evaluates the expression and catches any rejected promise with the catch clause."
   [expr catch-clause] (list 'try* expr catch-clause))
 
+(defmacro new
+  "Creates a new instance from a constructor function."
+  [& args] (cons 'new* args))
+
 (defn apply
   "The same as `f.apply(obj, args)` in Javascript."
   ([f args] (.apply f nil (zap->js args)))

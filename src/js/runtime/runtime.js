@@ -32,7 +32,22 @@ Runtime.prototype.addPreDefs = function () {
       return f.apply(null, arguments);
     });
   }
+
   return Promise.all([
+    wrapCore('new*', function (constructor) {
+      function empty() {}
+
+      if (!constructor) {
+        return null;
+      }
+      empty.prototype = constructor.prototype;
+
+      var o = new empty();
+      var args = Array.prototype.slice.call(arguments, 1);
+      constructor.apply(o, args);
+
+      return o;
+    }),
     wrapCore('+', function (a, b) {
       return a + b;
     }),
